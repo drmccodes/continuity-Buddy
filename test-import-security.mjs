@@ -10,7 +10,7 @@ assert.throws(()=>extractReportTable(parseCsv(preamble+'\n002,Dr Ash,2026-10-02,
 assert.throws(()=>extractReportTable(parseCsv('EMIS report\nPatient ID,Usual GP,Appointment Date,Consulting clinician,Patient Name\n001,Dr Ash,2026-10-01,Dr Birch,Jane',{allowPreamble:true})),/rejected/);
 const official=['Patient ID','Usual GP Full Name','Appt. Date',"Staff Member's Full Name",'Staff Role','Slot Type','Current Slot Status'];
 assert.deepEqual(validateExportHeaders(official),{patient:0,usual:1,date:2,clinician:3,type:5,status:6});
-const officialCsv=['Usual GP Continuity 2 - Consultation export','Last run 06/11/2026','Patient ID,Usual GP Full Name,Appt. Date,Staff Member\'s Full Name,Staff Role,Slot Type,Current Slot Status','33,Dr Smith,05/11/2026,Dr Jones,GP,Telephone,Telephone - Complete'].join('\\n');
+const officialCsv=['Usual GP Continuity 2 - Consultation export','Last run 06/11/2026','Patient ID,Usual GP Full Name,Appt. Date,Staff Member\'s Full Name,Staff Role,Slot Type,Current Slot Status','33,Dr Smith,05/11/2026,Dr Jones,GP,Telephone,Telephone - Complete'].join('\n');
 assert.equal(extractReportTable(parseCsv(officialCsv,{allowPreamble:true})).headerLine,3);
 const clinical=['Patient ID','Usual GP Full Name','Appt. Date',"Staff Member's Full Name","Session Holder's User Type"];
 const cols=validateExportHeaders(clinical);
