@@ -135,10 +135,9 @@ $('download').addEventListener('click', () => {
 });
 $('print').addEventListener('click', () => { if (!$('print').disabled) window.print(); });
 window.addEventListener('pagehide', () => {
-  // Best-effort cleanup, not a guarantee of secure deletion.
-  ++epoch; cohorts = []; reviews.clear();
-  for (const url of issuedObjectURLs) URL.revokeObjectURL(url);
-  issuedObjectURLs.clear();
+  // Clear both in-memory state AND the DOM so back-forward caching cannot show patient IDs.
+  // This does not securely erase OS or browser-managed memory or downloaded reports.
+  clearAll();
 });
 render();
 if ('serviceWorker' in navigator && window.isSecureContext) {
