@@ -1,0 +1,37 @@
+name: Privacy and clinical-data safeguards
+on:
+  push:
+    branches: [main, feature/privacy-security-pwa]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Inspect tracked files and runtime primitives
+        run: python3 scripts/security_scan.py
+      - name: Pure logic tests with synthetic patients
+        run: node --test test.mjs
+      - name: Syntax, deterministic Worker build and asset inspection
+        run: |
+          node --check app.mjs
+          node --check logic.mjs
+          node --check service-worker.js
+          node --check browser-test.mjs
+          node scripts/build-worker.mjs
+          node --check dist/worker.mjs
+          if grep -E 'EMIS Number.*[[:digit:]]{10,}' dist/worker.mjs; then exit 1; fi
+      - name: Chromium browser security and offline regression
+        env:
+          CHROME_PATH: google-chrome
+        run: node browser-test.mjs
