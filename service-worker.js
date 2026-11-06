@@ -1,5 +1,5 @@
 /* Reviewed shell version: increment manually for every published release. */
-const VERSION = 'continuitybuddy-shell-20261106-security-1';
+const VERSION = 'continuitybuddy-shell-20261106-security-2';
 const SHELL = ['/', '/index.html', '/style.css', '/app.mjs', '/logic.mjs', '/manifest.webmanifest', '/privacy.html'];
 self.addEventListener('install', event => {
   // Atomic cache transaction. Do not activate over existing open pages.
