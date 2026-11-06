@@ -1,7 +1,13 @@
 import {parseCsv,guessColumns,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo} from './engine.mjs';
 const $=id=>document.getElementById(id);
 let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={};
-const show=(id,on=true)=>$(id).hidden=!on;
+const show=(id,on=true)=>{
+ $(id).hidden=!on;
+ if(['clinicianPanel','resultsPanel'].includes(id)){
+  $('clinicianOverview').hidden=!$('clinicianPanel').hidden || !$('resultsPanel').hidden;
+  $('resultsOverview').hidden=!$('resultsPanel').hidden;
+ }
+};
 const text=(tag,value)=>{const e=document.createElement(tag);e.textContent=String(value??'');return e;};
 const clear=id=>$(id).replaceChildren();
 const percent=v=>v==null?'Not available':(100*v).toFixed(1)+'%';
