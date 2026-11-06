@@ -10,6 +10,10 @@ const emisMap=guessColumns(['Patient ID','Usual GP Full Name','Appt. Date',"Staf
 assert.equal(emisMap.patient,0);assert.equal(emisMap.usual,1);assert.equal(emisMap.date,2);assert.equal(emisMap.clinician,3);
 const parsed=normaliseConsultations(rows,map,{referenceDate:'2026-11-06'});
 assert.equal(parsed.events.length,8);assert.equal(parsed.quality.excludedStatus,1);
+const sameDay=parseCsv('Patient ID,Consultation Date,Consulting clinician,Usual GP\n999,02/05/2026,Dr Birch,Dr Ash\n999,02/05/2026,Dr Birch,Dr Ash');
+const sameParsed=normaliseConsultations(sameDay,guessColumns(sameDay[0]),{referenceDate:'2026-11-06'});
+assert.equal(sameParsed.events.length,2); // Do not silently merge possibly genuine separate appointments
+assert.equal(sameParsed.quality.duplicates,1); // Flag matching rows for user review
 const res=analyse(parsed.events,{minVisits:4});
 assert.equal(res.pairs.length,1);assert.equal(res.proposals.length,2);
 assert.equal(res.metrics.meanUPC,1);
