@@ -34,3 +34,32 @@ export function validateSelectedMapping(validated,map,mode='consultations'){
  return true;
 }
 export function filenameIsCsv(name){return typeof name==='string'&&/\.csv$/i.test(name);}
+
+/** Find the actual EMIS table header after optional report metadata.
+ * Reject unknown headers and inconsistent table rows; never silently discard patient rows.
+ */
+export function extractReportTable(rows,mode='consultations'){
+ if(!Array.isArray(rows)||!rows.length)throw Error('Empty CSV.');
+ const required=mode==='list'?['patient','usual']:['patient','usual','date','clinician'];
+ const limit=Math.min(rows.length,40);
+ let header=-1;
+ for(let i=0;i<limit;i++){
+  const row=rows[i];
+  if(!Array.isArray(row)||row.length<required.length||row.length>8)continue;
+  const fields=row.map(v=>allowed[normalise(v)]).filter(Boolean);
+  if(required.every(k=>fields.includes(k))){header=i;break;}
+ }
+ if(header<0){
+  // A single-line title or metadata at the top is not a valid header.
+  if(rows[0].length<required.length)throw Error('Could not locate the EMIS column headings in the first 40 rows. The export may contain a report title above the table, or be the wrong report. Expected: patient ID, usual GP, appointment date and consulting clinician. Nothing was analysed.');
+  validateExportHeaders(rows[0],mode);
+  throw Error('EMIS column headings were not found. Nothing was analysed.');
+ }
+ const headings=rows[header];
+ validateExportHeaders(headings,mode);
+ for(let i=header+1;i<rows.length;i++){
+  if(rows[i].length!==headings.length)throw Error('CSV data row '+(i+1)+' has '+rows[i].length+' columns; the actual table header (row '+(header+1)+') has '+headings.length+'. Check the export for an extra separator, missing quotation or footer. No data was analysed.');
+ }
+ if(rows.length===header+1)throw Error('EMIS table contains no patient rows.');
+ return {rows:rows.slice(header),skippedMetadataRows:header,headerLine:header+1};
+}
