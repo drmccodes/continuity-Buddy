@@ -106,7 +106,9 @@ export function analyse(events,opts={}){
   const departed=statusOf(usual)==='departed';
   const clear=top/n>=medium&&tops.length===1&&topEligible.length===1;
   let category='fragmented',to='',confidence='';
-  if(ownIsTop&&!departed){category='aligned';clearAligned++;}
+  if(!usual){category='missing-usual';}
+  else if(g.usualValues.size>1){category='conflicting-usual';}
+  else if(ownIsTop&&!departed){category='aligned';clearAligned++;}
   else if(clear){to=topEligible[0];category=departed?'departed':'reallocate';confidence=top/n>=high?'high':'medium';clearMismatch++;}
   else if(departed){category='departed-review';}
   const p={id:g.id,from:usual,to,n,top,topShare:top/n,ownCount:matched,counts:Object.fromEntries(ranked),category,confidence,dayCount:new Set(visits.map(v=>v.date)).size};
