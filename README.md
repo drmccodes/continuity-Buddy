@@ -16,17 +16,21 @@ Visit http://127.0.0.1:8765. No build, third-party dependencies, accounts, datab
 
 ## EMIS workflow
 
-1. Download Dr Neil Paul's publicly available [EMIS consultation search XML](https://www.drneilpaul.blog/usualgp/Usual_GP_Continuity_Search.xml). The XML remains a third-party resource; do not assume that it is independently audited or supported by EMIS.
+1. Download the locally hosted [original EMIS attended-appointments search XML](./downloads/Usual_GP_Continuity_Search.xml), created by [Dr Neil Paul](https://www.drneilpaul.blog/usualgp/). This is an unchanged copy of the author's original search, not a ContinuityBuddy-created query; do not assume it is independently audited or supported by EMIS.
 2. Import into EMIS Web > Reporting > Population Reporting > Import, subject to your practice's EMIS reporting permissions and local NHS IT policies.
 3. Run the patient search and consultation report, and export the second as CSV.
 4. Tick **Replicate patient details for each item** and **Replicate Usual GP details**; do not override hidden patients without explicit authorisation.
 5. Drop that CSV into ContinuityBuddy, verify the mapping, review clinician statuses and run the analysis.
-6. Optionally import the [companion list-size search](https://www.drneilpaul.blog/usualgp/Usual_GP_List_Sizes_Search.xml) report CSV to calculate full registered list sizes and patients per GP session.
+6. Optionally import the [unchanged companion list-size search](./downloads/Usual_GP_List_Sizes_Search.xml) report CSV to calculate full registered list sizes and patients per GP session.
 
 [Original author instructions](https://www.drneilpaul.blog/usualgp/how-to.html).
 EMIS XML search import is also documented by [CDRC](https://cdrc.nhs.uk/resources/emis-resource-centre/cdrc-emis-access/).
 
 **NHS PC compatibility:** EMIS supports XML imports, but capability depends on EMIS permissions, browser policy and local approval. We have not tested this specific XML in Killick Street EMIS. Never place patient identifiable data in GitHub, chats or test fixtures.
+
+## XML provenance and attribution
+
+Thanks to **[Dr Neil Paul](https://www.drneilpaul.blog/usualgp/)** for creating and sharing the EMIS searches. Both files are reproduced unchanged in `downloads/` as a convenience for practices; EMIS schema is `32.0.0`. The main export defines patient ID, Usual GP Full Name, Appt. Date, Staff Member's Full Name and session-holder user type, filtered to attended appointments. ContinuityBuddy auto-maps these headings. No improvements to the XML itself were introduced, because the existing attended-appointment and GP-user filtering is preferable to guessing or weakening those settings without a live EMIS validation test. Redistribution licensing terms were not explicitly located; original ownership remains with the author and permission should be confirmed for ongoing republication.
 
 ## What the numbers mean
 
