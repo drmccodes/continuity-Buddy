@@ -63,7 +63,7 @@ export function normaliseConsultations(rows,map,{referenceDate='2026-11-06',mont
   if(/^(cancelled|canceled|did not attend|dna|not attended|booked|pending)$/i.test(status)){excludedStatus++;continue;}
   const type=cell(r,map.type);
   const key=JSON.stringify([id,clinician,date,type,status]);
-  if(unique.has(key)){duplicates++;continue;}unique.add(key);
+  if(unique.has(key))duplicates++;else unique.add(key);
   events.push({id,usual,clinician,date,type,status});
  }
  if(missingId)throw Error(missingId+' rows have no patient identifier. Re-export from EMIS with BOTH replicate patient and usual GP options enabled.');
