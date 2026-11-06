@@ -15,7 +15,7 @@ assert.equal(res.metrics.slicc,0);
 assert.equal(res.metrics.usualAccuracy,0);
 assert.equal(res.gpRows.length,2);
 assert.equal(analyse(parsed.events,{statuses:{'Dr Birch':'nonlist'}}).proposals.length,1);
-assert.equal(analyse(parsed.events,{statuses:{'Dr Birch':'exclude'}}).proposals.length,0);
+assert.equal(analyse(parsed.events,{statuses:{'Dr Birch':'exclude'}}).proposals.length,1); // Existing Dr Birch list still needs reassignment; its non-excluded contacts point to Dr Ash.
 assert.equal(analyse(syntheticDemo()).pairs.length>0,true);
 const output=proposalCsv([{id:'=SUM(1)',from:'A',to:'B',n:4,top:4,ownCount:0,topShare:1,confidence:'high'}]);
 assert.match(output,/"'=SUM\(1\)"/);
