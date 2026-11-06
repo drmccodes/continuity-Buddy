@@ -27,4 +27,22 @@ const conflict=[{id:'x',usual:'Dr Ash',clinician:'Dr Birch',date:'2026-04-01'},{
 assert.equal(analyse(conflict).proposals.length,0);
 assert.equal(analyse(conflict).patients[0].category,'conflicting-usual');
 assert.equal(analyse([{id:'x',usual:'',clinician:'Dr Birch',date:'2026-04-01'},{id:'x',usual:'',clinician:'Dr Birch',date:'2026-04-02'},{id:'x',usual:'',clinician:'Dr Birch',date:'2026-04-03'},{id:'x',usual:'',clinician:'Dr Birch',date:'2026-04-04'}]).proposals.length,0);
+
+const reference=[];
+for(const [id,usual,doctor,count] of [
+ ['SYN-A','Dr Ash','Dr Birch',4],['SYN-A','Dr Ash','Dr Ash',1],
+ ['SYN-B','Dr Birch','Dr Ash',5],['SYN-B','Dr Birch','Dr Birch',1],
+ ['SYN-C','Dr Ash','Dr Ash',4],['SYN-D','Dr Birch','Dr Ash',2],['SYN-D','Dr Birch','Dr Birch',2]
+])for(let n=0;n<count;n++)reference.push({id,usual,clinician:doctor,date:'2026-02-'+String(n+1).padStart(2,'0')});
+const baseline=analyse(reference);
+assert.equal(baseline.metrics.patients,4);
+assert.equal(baseline.metrics.consultations,19);
+assert.equal(baseline.metrics.frequent,4);
+assert.equal(baseline.metrics.slicc,8/19);
+assert.equal(baseline.metrics.meanUPC,47/60);
+assert.equal(baseline.metrics.usualAccuracy,1/3);
+assert.equal(baseline.proposals.length,2);
+assert.equal(baseline.pairs.length,1);
+assert.equal(baseline.fragmented.some(p=>p.id==='SYN-D'),true);
+
 console.log('ContinuityBuddy v2 regression tests passed');
