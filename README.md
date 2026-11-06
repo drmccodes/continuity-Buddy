@@ -1,54 +1,51 @@
 # ContinuityBuddy
 
-Privacy-first, browser-only GP continuity and reciprocal usual-GP swap proposal tool.
+Privacy-first, static GP continuity and usual-GP reciprocal swap proposal tool. **Not approved for use with real NHS patient records until local information governance and clinical safety sign-off.**
 
-## Start
+## Application
 
-Serve the directory on a local, practice-approved computer (ES modules require HTTP):
+Open `index.html` via a local static server, or deploy the exact reviewed static files under HTTPS. No database, server-side patient processing, tracking or third-party runtime libraries.
 
-```bash
+For local development:
+
+```sh
 python3 -m http.server 8765 --bind 127.0.0.1
+# open http://127.0.0.1:8765/
 ```
 
-Open `http://127.0.0.1:8765`. No install, dependencies, analytics, remote calls, backend, account or persistence. Do not place actual patient data in the repository. Hosting the **code only** as a static site is technically possible, but practice IG approval is needed before use with any real patient identifiers.
+All imported EMIS IDs and matches remain in tab memory. Reports are explicitly downloaded or printed, never auto-synced. The clear function removes app state and visible data; it does not securely erase OS/browser memory or previously downloaded files. The public site is just code; ordinary asset requests still reach Cloudflare.
 
-## EMIS workflow
+## EMIS export workflow
 
-Follow the in-app instructions to make three searches per GP: (A) usual GP is Dr X, (B) more than three consultations authored by Dr X in the past year, (C) no consultations authored by Dr X in the past year. Export each patient set to an EMIS number-only CSV, then associate the file with its category and GP in the app. This is *not* a live integration with EMIS.
+Follow the in-app instructions for three patient searches per GP (A: current usual GP; B: more than 3 recorded consultations with that GP in last year; C: no consultation entries with that GP in last year). Ensure every GP in scope has all three cohorts and every search uses the same date window.
 
-**Unverified EMIS capability:** Published walkthroughs confirm List Reports and CSV export, but describe the **NHS number** field, not an EMIS-internal patient identifier. We have not verified that a standard EMIS List Report can export that internal number. Never rename NHS numbers to EMIS numbers. If the EMIS identifier is unavailable for export, obtain an approved EMIS-native method or use approved pseudonymised IDs (a future explicitly configured version may support these). Avoid exporting identifiable records as a workaround.
+The exact EMIS internal ID field **has not been confirmed** as exportable through a standard EMIS List Report. The app requires a one-column CSV headed exactly `EMIS Number`, with 1-15 digits on each row; unlabelled columns, NHS-number headings, names, DOB, addresses and other data are rejected. Numeric-only content cannot prove an NHS number was not mislabelled; a user must attest that the file was sourced from the correct internal EMIS field. **Do not rename an NHS-number export to bypass validation.**
 
-## CSV format
-
-Single column (header optional):
-
+Synthetic sample:
 ```csv
 EMIS Number
-123456
-456789
+00012345
+00012346
 ```
 
-No names, NHS numbers, dates of birth, addresses, postcodes, or consultation information. The parser rejects extra columns, unrecognised headers, non-digit values and excessive files. Numeric-only identifiers cannot be definitively differentiated from a mislabelled NHS number: operators **must** confirm the source was the EMIS internal ID. EMIS numbers are still personal data when linkable to a person. File content is read locally; do not upload to an unapproved site.
+Review patient preference, workload, ongoing care, complexity and accuracy of consultation entries. A 4+ recorded-entries cohort is **not** proof of four clinical encounters or of the most-seen GP. The matching engine considers only imported cohorts, blocks incomplete/contradictory records and proposes balanced reciprocal swaps only for review. Never makes changes to EMIS.
 
-## Matching
+## Offline, updates and security
 
-A candidate must have one known usual GP, a membership in that GP's 'not seen' cohort, and membership in **exactly one other GP's** 4+ consultation cohort. Reciprocal swaps are paired by current and proposed GP in both directions; pairs keep GP patient-list counts unchanged. The algorithm does not identify the actual most-seen GP, does not infer suitability, and cannot judge workload or clinical complexity. If more than one alternative GP qualifies, the patient is withheld rather than guessed. A patient included in two different owner cohorts is excluded and flagged. Unmatched candidates are shown separately. All outputs are **proposals for review**.
+A same-origin service worker caches a fixed reviewed public shell, not patient data. On a secure origin, install the app while online, wait for the offline shell to cache, then open it offline. No forced takeover of running tabs. After a new release, close all old ContinuityBuddy tabs before using the updated version. An old cache may remain until an update activates.
 
-## Security design
+The hosted code can be tampered with by compromised maintainers or hosting provider; PWA support does not solve supply-chain trust. Practices must authorise their environment and user workflow before using real data.
 
-- Zero dependencies or external scripts, fonts, APIs, analytics, storage, service workers or cookies.
-- Content security policy `connect-src 'none'` and `default-src 'none'`.
-- Patient identifiers are never written to localStorage or remote services.
-- No direct HTML injection of imported values; UI uses `textContent`.
-- Proposal CSV exported locally; treat exported reports as confidential and store only in approved systems.
-- Deliberately no server-side handling, EMIS automation, batch edits or automatic patient reassignment.
+## Testing
 
-## Verification
+```sh
+node --test test.mjs
+node browser-test.mjs
+```
+Browser test uses synthetic IDs and requires Chromium or Google Chrome installed; set `CHROME_PATH` if necessary. It checks the import-to-export workflow, patient-data-free requests, local storage, Clear, async race, and offline reload.
 
-`node test.mjs` tests CSV rejection, uniqueness, pairing and ambiguous alternative GP handling. These are logic checks, not a clinical safety case or EMIS integration test. Real-world use requires practice IG/clinical safety sign-off and validation against local EMIS export conventions.
+See [Security](SECURITY.md) and [Governance](GOVERNANCE.md) for fuller risk, privacy and UK GDPR/DCB considerations. [Privacy page](privacy.html).
 
-## Evidence
+## Publication and provenance
 
-- [EMIS roadshow reporting overview](https://storage.googleapis.com/eng-app-storage/ebdd0cbc-5fc6-11eb-a30c-6eb0c21e005c/media/original/ac1aa1b8-fef0-11ed-b902-8a11eb4bd7e6)
-- [EMIS List Report and CSV walkthrough](https://support.engagehealth.uk/support/solutions/articles/48001212601)
-- [NHS England guidance on NHS number as identifier](https://digital.nhs.uk/data-and-information/information-governance/guidance/nhs-numbers-as-identifiers)
+The source should be public **after security review and Git history scan**, while real exports must never enter GitHub. The separately deployed preview Worker uses only synthetic test datasets. Promote only a reviewed commit.
