@@ -1,0 +1,10 @@
+{
+  "name": "ContinuityBuddy",
+  "short_name": "ContinuityBuddy",
+  "description": "Private, local-only GP continuity swap proposal tool",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f9fc",
+  "theme_color": "#f7f9fc"
+}

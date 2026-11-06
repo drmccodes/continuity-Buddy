@@ -14,3 +14,15 @@ exports/
 reports/
 *.log
 .DS_Store
+
+# Build output and potential confidential workspace material
+dist/
+.env*
+*.key
+*.pem
+*.p12
+*.pfx
+patient-data/
+screenshots/
+node_modules/
+coverage/
