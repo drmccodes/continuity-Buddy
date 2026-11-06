@@ -2,7 +2,19 @@
 
 Privacy-first browser-only GP continuity and reciprocal usual-GP reallocation review tool.
 
-**Development status:** v2 is on an unmerged feature branch and has not yet been clinically validated on an EMIS export. Do not use patient data until practice information-governance and clinical-safety review.
+**Status:** Privacy-hardened testing edition; still requires local NHS information-governance and clinical-safety authorisation before real-patient use. The standalone offline file has not been benchmarked with a genuine practice EMIS dataset.
+
+## NHS workstation: recommended workflow
+
+1. Download [ContinuityBuddy-Offline.html](./ContinuityBuddy-Offline.html) from the public site onto an approved, managed NHS device and store it in an approved location.
+2. Open the file locally in a supported browser. It contains the whole application and both EMIS XML searches; it does not depend on network access. For the strongest practical assurance, disconnect the device from the internet while processing the patient export (where NHS device policy allows).
+3. Download and import the bundled original EMIS search XML using authorised EMIS reporting privileges. Run the attended-appointments search, export a CSV with **replicate patient details** and **replicate usual GP**, then import into the standalone file.
+4. The tool rejects unexpected CSV columns such as patient names, NHS numbers, DOB, diagnoses and free text. Verify report origin and clinician statuses before analysing. Do not manually redact or modify the XML output if it already contains only the five expected columns.
+5. Review every patient proposal against the clinical record and patient preference. Download only approved pairs to NHS-managed storage, then clear the app and close the tab.
+
+**Limitations:** CSV cells in allowed fields must still contain only the expected identifiers and GP/date values. The browser’s no-network policy controls the application, not browser extensions, the operating system or compromised endpoint processes. The offline HTML is a reproducible static build generated with `node tools/build-offline.mjs`; its JavaScript and CSS are restricted by SHA-256 hashes in a strict CSP. No third-party runtime libraries are used.
+
+See [SAFETY-CASE.md](./SAFETY-CASE.md) for the threat model, hazard log and local sign-off requirements.
 
 ## Run
 
@@ -59,9 +71,12 @@ Clinician statuses: **Eligible list holder**, **Count visits, no list**, **Exclu
 ```bash
 node test.mjs
 node test-v2.mjs
+node test-import-security.mjs
+python3 benchmarks/reference.py
+node tools/build-offline.mjs
 ```
 
-The new tests cover representative consultation CSVs, date handling, excluded appointments, continuity metrics, reciprocal pairs and spreadsheet formula injection. Full browser E2E tests, a real EMIS sample verified locally, large dataset performance and security sign-off are still needed.
+The regression tests cover representative consultation CSVs, rejected unnecessary identifiers/clinical fields, date handling, excluded appointments, continuity metrics, reciprocal pairs and spreadsheet formula injection. A separately implemented Python benchmark checks synthetic reference values. Full browser E2E tests, a real EMIS sample verified locally, large dataset performance and clinical/IG sign-off remain outstanding.
 
 ## Independent references
 
