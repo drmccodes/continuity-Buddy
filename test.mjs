@@ -55,7 +55,8 @@ test('fail closed with missing cohort', () => {
 test('fail closed with contradictory evidence', () => {
   const result=analyse([...dataset().filter(c=>c.kind!=='seen'||c.gp!=='Dr A'),{kind:'seen',gp:'Dr A',ids:['0003','0001']}]);
   assert.equal(result.contradictoryCount,1);
-  assert.equal(result.pairs.length,0);
+  assert.equal(result.pairs.length,1); // the unaffected 0002 <-> 0003 pair remains
+  assert.equal(result.pairs[0].first.id,'0002');
 });
 test('exclude duplicate ownership and ambiguous alternatives', () => {
   const conflicting=analyse([...dataset(),{kind:'owner',gp:'Dr B',ids:['0001']}]);
