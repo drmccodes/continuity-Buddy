@@ -11,6 +11,7 @@ const show=(id,on=true)=>{
 };
 const text=(tag,value)=>{const e=document.createElement(tag);e.textContent=String(value??'');return e;};
 const clear=id=>$(id).replaceChildren();
+const moveTo=id=>{const target=$(id);if(target)target.scrollIntoView({block:'start',behavior:'instant'});};
 const percent=v=>v==null?'Not available':(100*v).toFixed(1)+'%';
 const select=(items,value,change)=>{const s=document.createElement('select');for(const [v,label] of items){const o=text('option',label);o.value=v;s.append(o);}s.value=value;s.addEventListener('change',()=>change(s.value));return s;};
 function error(message){$('message').textContent=message;$('message').className='status error';}
@@ -27,7 +28,7 @@ async function load(file){
    const s=select(options,String(cols[key]??-1),()=>{});s.id='map-'+key;
    label.append(s);$('mappings').append(label);
   }
-  $('message').textContent='CSV read locally. '+(rows.length-1).toLocaleString('en-GB')+' rows detected. Confirm column mappings.';$('message').className='status';
+  $('message').textContent='CSV read locally. '+(rows.length-1).toLocaleString('en-GB')+' rows detected. Confirm column mappings.';$('message').className='status';moveTo('mapPanel');
  }catch(e){rows=null;validatedHeaders=null;show('mapPanel',false);error(e.message);}
 }
 function runParsing(){
@@ -36,7 +37,7 @@ function runParsing(){
   if(!$('importConfirmed').checked)throw Error('Confirm this is an attended-GP-appointments export from an approved EMIS search.');
   validateSelectedMapping(validatedHeaders,map);
   const parsed=normaliseConsultations(rows,map,{referenceDate:$('referenceDate').value});
-  events=parsed.events;quality=parsed.quality;isDemo=false;$('reviewConfirmed').checked=false;renderClinicians();show('clinicianPanel');show('importPanel',false);show('resultsPanel',false);
+  events=parsed.events;quality=parsed.quality;isDemo=false;$('reviewConfirmed').checked=false;renderClinicians();show('clinicianPanel');show('importPanel',false);show('resultsPanel',false);moveTo('clinicianPanel');
  }catch(e){error(e.message);}
 }
 function renderClinicians(){
@@ -53,11 +54,11 @@ function renderClinicians(){
 }
 function calculate(){
  try{
-  if(!$('reviewConfirmed').checked)throw Error('Confirm you have checked list holders, locums and departed clinicians.');
+  if(!$('reviewConfirmed').checked){$('reviewConfirmed').focus();$('reviewConfirmed').scrollIntoView({block:'center',behavior:'instant'});throw Error('Tick the clinician review confirmation before analysing.');}
   const minVisits=Number($('minVisits').value),high=Number($('high').value)/100,medium=Number($('medium').value)/100;
   if(!Number.isInteger(minVisits)||minVisits<1||minVisits>30||high<medium||high>1||medium<0.3)throw Error('Check the thresholds.');
   result=analyse(events,{statuses,aliases,minVisits,high,medium,listSizes,sessions});
-  decisions={};show('clinicianPanel',false);show('resultsPanel');renderResults();
+  decisions={};show('clinicianPanel',false);show('resultsPanel');renderResults();moveTo('resultsPanel');
  }catch(e){window.alert(e.message);}
 }
 function renderResults(){
@@ -126,8 +127,9 @@ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag
 drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
 $('process').addEventListener('click',runParsing);
-$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;renderClinicians();show('importPanel',false);show('clinicianPanel');});
+$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;renderClinicians();show('importPanel',false);show('clinicianPanel');moveTo('clinicianPanel');});
 $('run').addEventListener('click',calculate);
+$('runTop').addEventListener('click',calculate);
 $('backImport').addEventListener('click',()=>{show('clinicianPanel',false);show('importPanel');});
 $('editClinicians').addEventListener('click',()=>{show('resultsPanel',false);show('clinicianPanel');});
 $('reset').addEventListener('click',reset);
