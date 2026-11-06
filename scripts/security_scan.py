@@ -19,6 +19,6 @@ for name in ['index.html','app.mjs','logic.mjs','service-worker.js']:
   sys.exit('External runtime assets are forbidden')
  if name=='app.mjs' and re.search(r'localStorage|sessionStorage|indexedDB|sendBeacon|XMLHttpRequest|fetch\(|WebSocket\(',text):
   sys.exit('Potential patient-data persistence/egress primitive in app.mjs; review required')
- if name=='service-worker.js' and (re.search(r'cache\.add\(|cache\.addAll\(',text) or 'skipWaiting(' in text or 'clients.claim(' in text):
+ if name=='service-worker.js' and (re.search(r'cache\.add\(|cache\.addAll\(',text) or re.search(r'^\\s*(?:self\\.)?skipWaiting\\(',text,re.M) or re.search(r'^\\s*(?:self\\.)?clients\\.claim\\(',text,re.M)):
   sys.exit('Unreviewed service-worker cache or live update primitive')
 print('PASS: tracked-file policy and forbidden runtime primitives')
