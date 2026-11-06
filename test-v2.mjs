@@ -21,4 +21,8 @@ const output=proposalCsv([{id:'=SUM(1)',from:'A',to:'B',n:4,top:4,ownCount:0,top
 assert.match(output,/"'=SUM\(1\)"/);
 assert.throws(()=>normaliseConsultations(parseCsv('Patient ID,Consultation Date,Consulting clinician,Usual GP\n,01/01/2026,Dr A,Dr B'),guessColumns(['Patient ID','Consultation Date','Consulting clinician','Usual GP'])));
 assert.equal(clinicianCounts(parsed.events).length,2);
+const conflict=[{id:'x',usual:'Dr Ash',clinician:'Dr Birch',date:'2026-04-01'},{id:'x',usual:'Dr Birch',clinician:'Dr Birch',date:'2026-04-02'},{id:'x',usual:'Dr Ash',clinician:'Dr Birch',date:'2026-04-03'},{id:'x',usual:'Dr Ash',clinician:'Dr Birch',date:'2026-04-04'}];
+assert.equal(analyse(conflict).proposals.length,0);
+assert.equal(analyse(conflict).patients[0].category,'conflicting-usual');
+assert.equal(analyse([{id:'x',usual:'',clinician:'Dr Birch',date:'2026-04-01'},{id:'x',usual:'',clinician:'Dr Birch',date:'2026-04-02'},{id:'x',usual:'',clinician:'Dr Birch',date:'2026-04-03'},{id:'x',usual:'',clinician:'Dr Birch',date:'2026-04-04'}]).proposals.length,0);
 console.log('ContinuityBuddy v2 regression tests passed');
