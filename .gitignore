@@ -1,0 +1,16 @@
+# Never commit real patient identifiers or exported reports
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.ods
+*.pdf
+*.zip
+*.dump
+*.sqlite
+*.db
+data/
+exports/
+reports/
+*.log
+.DS_Store
