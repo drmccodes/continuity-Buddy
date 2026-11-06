@@ -6,6 +6,8 @@ assert.deepEqual(parseCsv('A,B\n"1,2","a""b"')[1],['1,2','a"b']);
 assert.equal(parseDate('31/01/2026'),'2026-01-31');
 assert.equal(parseDate('31/02/2026'),null);
 const map=guessColumns(rows[0]);assert.equal(map.patient,0);assert.equal(map.usual,3);
+const emisMap=guessColumns(['Patient ID','Usual GP Full Name','Appt. Date',"Staff Member's Full Name", "Session Holder's User Type"]);
+assert.equal(emisMap.patient,0);assert.equal(emisMap.usual,1);assert.equal(emisMap.date,2);assert.equal(emisMap.clinician,3);
 const parsed=normaliseConsultations(rows,map,{referenceDate:'2026-11-06'});
 assert.equal(parsed.events.length,8);assert.equal(parsed.quality.excludedStatus,1);
 const res=analyse(parsed.events,{minVisits:4});
