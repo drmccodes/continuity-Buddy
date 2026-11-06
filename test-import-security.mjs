@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
-import {validateExportHeaders,validateSelectedMapping,filenameIsCsv} from './import-security.mjs';
+import {validateExportHeaders,validateSelectedMapping,filenameIsCsv,extractReportTable} from './import-security.mjs';
 
+import {parseCsv} from './engine.mjs';
+const preamble='EMIS report\nGenerated locally\nPatient ID,Usual GP,Appointment Date,Consulting clinician\n001,Dr Ash,2026-10-01,Dr Birch';
+const extracted=extractReportTable(parseCsv(preamble,{allowPreamble:true}));
+assert.equal(extracted.headerLine,3);
+assert.equal(extracted.rows.length,2);
+assert.throws(()=>extractReportTable(parseCsv(preamble+'\\n002,Dr Ash,2026-10-02,Dr Birch,extra',{allowPreamble:true})),/row 5 has 5 columns/);
+assert.throws(()=>extractReportTable(parseCsv('EMIS report\\nPatient ID,Usual GP,Appointment Date,Consulting clinician,Patient Name\\n001,Dr Ash,2026-10-01,Dr Birch,Jane',{allowPreamble:true})),/rejected/);
 const clinical=['Patient ID','Usual GP Full Name','Appt. Date',"Staff Member's Full Name","Session Holder's User Type"];
 const cols=validateExportHeaders(clinical);
 assert.deepEqual(cols,{patient:0,usual:1,date:2,clinician:3,type:4});
