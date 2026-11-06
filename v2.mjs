@@ -1,5 +1,5 @@
 import {parseCsv,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo} from './engine.mjs';
-import {validateExportHeaders,validateSelectedMapping,filenameIsCsv} from './import-security.mjs';
+import {validateExportHeaders,validateSelectedMapping,filenameIsCsv,extractReportTable} from './import-security.mjs';
 const $=id=>document.getElementById(id);
 let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={},validatedHeaders=null;
 const show=(id,on=true)=>{
@@ -20,7 +20,7 @@ async function load(file){
  try{
   if(file.size>60_000_000)throw Error('File exceeds 60 MB.');
   if(!filenameIsCsv(file.name))throw Error('Please choose a CSV export, not an Excel file.');
-  rows=parseCsv(await file.text());validatedHeaders=validateExportHeaders(rows[0],'consultations');isDemo=false;show('mapPanel');
+  const extracted=extractReportTable(parseCsv(await file.text(),{allowPreamble:true}),'consultations');rows=extracted.rows;validatedHeaders=validateExportHeaders(rows[0],'consultations');isDemo=false;show('mapPanel');
   const cols={...validatedHeaders};clear('mappings');
   for(const [key,title] of [['patient','Patient identifier'],['date','Consultation date'],['clinician','Consulting clinician'],['usual','Usual GP'],['type','Consultation / slot type (optional)'],['status','Attendance status (optional)']]){
    const label=text('label',title);
@@ -28,7 +28,7 @@ async function load(file){
    const s=select(options,String(cols[key]??-1),()=>{});s.id='map-'+key;
    label.append(s);$('mappings').append(label);
   }
-  $('message').textContent='CSV read locally. '+(rows.length-1).toLocaleString('en-GB')+' rows detected. Confirm column mappings.';$('message').className='status';moveTo('mapPanel');
+  $('message').textContent='CSV read locally. '+(rows.length-1).toLocaleString('en-GB')+' rows detected. '+(extracted.skippedMetadataRows?'Skipped '+extracted.skippedMetadataRows+' preceding report-information row(s). ':'')+'Confirm column mappings.';$('message').className='status';moveTo('mapPanel');
  }catch(e){rows=null;validatedHeaders=null;show('mapPanel',false);error(e.message);}
 }
 function runParsing(){
@@ -106,7 +106,7 @@ $('listFile').addEventListener('change',async e=>{
  const file=e.target.files?.[0];if(!file)return;
  try{
   if(file.size>60_000_000||!/\\.csv$/i.test(file.name))throw Error('Choose a CSV under 60 MB.');
-  const data=parseCsv(await file.text()),columns=validateExportHeaders(data[0],'list');
+  const extracted=extractReportTable(parseCsv(await file.text(),{allowPreamble:true}),'list'),data=extracted.rows,columns=validateExportHeaders(data[0],'list');
   if(columns.patient<0||columns.usual<0)throw Error('List file must contain patient identifier and usual GP columns.');
   const seen=new Map();
   for(const row of data.slice(1)){
