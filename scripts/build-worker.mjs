@@ -25,7 +25,7 @@ export default {
     return new Response(request.method==='HEAD' ? null : assets[key],{
       headers:{
         'Content-Type': mime[ext] || 'text/plain; charset=utf-8',
-        'Content-Security-Policy': ${JSON.stringify(csp)},
+        'Content-Security-Policy': key === 'service-worker.js' ? ${JSON.stringify(csp.replace("connect-src 'none'","connect-src 'self'"))} : ${JSON.stringify(csp)},
         'Cache-Control':'no-store',
         'Referrer-Policy':'no-referrer',
         'X-Content-Type-Options':'nosniff',
