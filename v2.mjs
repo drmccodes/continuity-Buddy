@@ -121,7 +121,8 @@ $('listFile').addEventListener('change',async e=>{
   if(result){result=analyse(events,{statuses,aliases,listSizes,sessions,minVisits:Number($('minVisits').value),high:Number($('high').value)/100,medium:Number($('medium').value)/100});renderResults();}
  }catch(err){$('listStatus').textContent='List import not accepted: '+err.message;}
 });
-$('file').addEventListener('change',e=>{if(e.target.files?.[0])load(e.target.files[0]);});
+$('file').addEventListener('change',e=>{show('mapPanel',false);rows=null;validatedHeaders=null;const f=e.target.files?.[0];$('message').textContent=f?'Selected '+f.name+'. Click Process selected CSV.':'';});
+$('prepareCsv').addEventListener('click',()=>{const f=$('file').files?.[0];if(!f){error('Choose a consultation CSV first.');return;}load(f);});
 const drop=$('drop');
 drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
 drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
