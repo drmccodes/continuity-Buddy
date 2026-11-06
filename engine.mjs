@@ -1,28 +1,31 @@
 // Pure, dependency-free, browser-safe ContinuityBuddy analysis engine.
 // No network, storage, DOM or logging. All identifiers are confidential.
 export function parseCsv(source) {
-  if (typeof source !== 'string' || !source.trim()) throw Error('The file is empty.');
-  if (source.length > 60_000_000) throw Error('CSV exceeds the 60 MB safety limit.');
-  const out=[]; let row=[], field='', quoted=false, afterQuote=false;
-  source=source.replace(/^\uFEFF/,'');
-  for(let i=0;i<source.length;i++){
-    const c=source[i];
-    if(quoted) { if(c==='"' && source[i+1]==='"'){field+='"';i++;} else if(c==='"'){quoted=false;afterQuote=true;}else field+=c; }
-    else if(afterQuote) {if(c===','){row.push(field);field='';afterQuote=false;}else if(c==='\r'||c==='\n'){row.push(field);if(row.some(x=>x.trim()))out.push(row);row=[];field='';afterQuote=false;if(c==='\r'&&source[i+1]==='\n')i++;}else if(c!==' '&&c!=='\t')throw Error('Invalid CSV quoting.');}
-    else if(c==='"'){if(field)throw Error('Invalid CSV quoting.');quoted=true;}
-    else if(c===','){row.push(field);field='';}
-    else if(c==='\r'||c==='\n'){row.push(field);if(row.some(x=>x.trim()))out.push(row);row=[];field='';if(c==='\r'&&source[i+1]==='\n')i++;}
-    else field+=c;
-  }
-  if(quoted)throw Error('Unclosed CSV quote.');
-  row.push(field);if(row.some(x=>x.trim()))out.push(row);
-  if(out.length>500000)throw Error('Too many rows: maximum 500,000.');
-  if(!out.length)throw Error('The file contains no rows.');
-  const width=out[0].length;
-  if(width>150||out.some(r=>r.length!==width))throw Error('CSV rows have inconsistent column counts.');
-  return out;
-}
-const norm=s=>String(s??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ');
+ if(typeof source!=='string'||!source.trim())throw Error('The file is empty.');
+ if(source.length>60_000_000)throw Error('CSV exceeds the 60 MB safety limit.');
+ source=source.replace(/^\uFEFF/,'');
+ // Detect delimiters outside quoted fields, including EMIS tab-separated exports.
+ const counts={',':0,';':0,'\t':0};let q=false;
+ for(let i=0;i<source.length;i++){const c=source[i];if(c==='"'){if(q&&source[i+1]==='"')i++;else q=!q;}else if(!q&&(c==='\r'||c==='\n'))break;else if(!q&&c in counts)counts[c]++;}
+ const sep=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+ const out=[];let row=[],field='',quoted=false,after=false,line=1,start=1;
+ function finish(){row.push(field);if(row.some(v=>v.trim()))out.push({row,line:start});row=[];field='';after=false;start=line+1;if(out.length>500000)throw Error('Too many rows: maximum 500,000.');}
+ for(let i=0;i<source.length;i++){const c=source[i];
+  if(quoted){if(c==='"'&&source[i+1]==='"'){field+='"';i++;}else if(c==='"'){quoted=false;after=true;}else{field+=c;if(c==='\n')line++;}}
+  else if(after){if(c===sep){row.push(field);field='';after=false;}else if(c==='\r'||c==='\n'){finish();if(c==='\r'&&source[i+1]==='\n')i++;line++;}else if(c!==' '&&c!=='\t')throw Error('Invalid CSV quoting near line '+line+'.');}
+  else if(c==='"'){if(field.trim())throw Error('Invalid CSV quoting near line '+line+'.');field='';quoted=true;}
+  else if(c===sep){row.push(field);field='';}
+  else if(c==='\r'||c==='\n'){finish();if(c==='\r'&&source[i+1]==='\n')i++;line++;}
+  else field+=c;
+ }
+ if(quoted)throw Error('Unclosed CSV quote beginning near line '+start+'.');
+ row.push(field);if(row.some(v=>v.trim()))out.push({row,line:start});
+ if(!out.length)throw Error('The file contains no rows.');
+ const width=out[0].row.length;if(width>150)throw Error('CSV contains more than 150 columns.');
+ const bad=out.find(x=>x.row.length!==width);
+ if(bad)throw Error('CSV row '+bad.line+' has '+bad.row.length+' columns; the header has '+width+'. Check the export delimiter, quoted fields and unexpected separators. Nothing has been analysed.');
+ return out.map(x=>x.row);
+}const norm=s=>String(s??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ');
 export function guessColumns(headers){
  const rules={
   patient:[/^(emis )?(patient )?(number|id)$/, /nhs number/,/patient identifier/,/patient id/,/patient number/],
