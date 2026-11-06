@@ -29,7 +29,7 @@ A browser-only aid to identify possible improvements to usual GP allocation usin
 2. **False confidence in continuity:** attended appointment records are an imperfect proxy for meaningful clinical encounters. Disclose this, provide raw counts, and avoid certainty labels as clinical judgements.
 3. **Missing patients:** patients without attended appointments do not appear in consultation export. Use separate registered list for denominator; never call seen-patient subset the complete practice population.
 4. **Data quality / mapping error:** validate exact imported column headings, block unidentified extra fields, flag empty IDs and inconsistent rows.
-5. **Skew from same-day appointments:** dedupe rules might collapse multiple legitimate encounters on one date. Independently benchmark and document sensitivity.
+5. **Skew from same-day appointments:** same-day records may be distinct attended appointments or report duplicates. The application retains them, flags potential duplicates, and requires local validation to establish the appropriate interpretation.
 6. **Incorrect session-equity assessment:** clinical sessions vary in workload and role. Patient-per-session is an advisory proxy only.
 
 ## Approval requirements
