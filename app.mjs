@@ -1,20 +1,149 @@
-import {validateEmisCsv,analyse,safeCsvField} from './logic.mjs';
-const $=id=>document.getElementById(id);let cohorts=[];let result=analyse(cohorts);const reviews=new Map();
-function el(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
-function render(){
- const body=$('cohorts');body.replaceChildren();
- if(!cohorts.length){const tr=el('tr');const td=el('td','No cohorts imported yet.','empty');td.colSpan=4;tr.append(td);body.append(tr);}
- cohorts.forEach((c,i)=>{const tr=el('tr');[({owner:'A · Usual GP',seen:'B · Seen 4+',notseen:'C · Not seen'})[c.kind],c.gp,String(c.ids.length)].forEach(v=>tr.append(el('td',v)));const td=el('td');const b=el('button','Remove','secondary small');b.addEventListener('click',()=>{cohorts.splice(i,1);reviews.clear();render()});td.append(b);tr.append(td);body.append(tr);});
- result=analyse(cohorts);$('metricOwners').textContent=result.ownerCount;$('metricEligible').textContent=result.eligible.length;$('metricPairs').textContent=result.pairs.length;$('metricUnmatched').textContent=result.unmatched.length;
- const warnings=[];if(result.conflicts.length)warnings.push(`${result.conflicts.length} patient IDs appeared under multiple usual GPs and were excluded.`);if(cohorts.length && (!cohorts.some(c=>c.kind==='owner')||!cohorts.some(c=>c.kind==='seen')||!cohorts.some(c=>c.kind==='notseen')))warnings.push('Add A, B and C search cohorts to generate proposals.');
- $('warnings').textContent=warnings.join(' ');$('download').disabled=result.pairs.length===0;$('print').disabled=result.pairs.length===0;
- const tbody=$('swaps');tbody.replaceChildren();if(!result.pairs.length){const tr=el('tr');const td=el('td','No reciprocal pairs identified from imported cohorts.','empty');td.colSpan=5;tr.append(td);tbody.append(tr);}
- result.pairs.forEach((p,i)=>[p.first,p.second].forEach((c,j)=>{const tr=el('tr');if(j===0){const cell=el('td',String(i+1));cell.rowSpan=2;tr.append(cell);}tr.append(el('td',c.id),el('td',c.from),el('td',c.to));const td=el('td');const s=el('select');s.setAttribute('aria-label',`Review status for EMIS ${c.id}`);['For review','Suitable in principle','Do not swap'].forEach(v=>{const o=el('option',v);o.value=v;s.append(o)});s.value=reviews.get(c.id)||'For review';s.addEventListener('change',()=>reviews.set(c.id,s.value));td.append(s);tr.append(td);tbody.append(tr);}));
- const unmatched=$('unmatched');unmatched.replaceChildren();if(!result.unmatched.length){unmatched.textContent='None identified.';}else{unmatched.textContent=`${result.unmatched.length} patient(s) have an alternative GP but lack a reciprocal counterpart: `;unmatched.append(el('span',result.unmatched.map(c=>`${c.id} (${c.from} → ${c.to})`).join('; ')));}
+import {validateEmisCsv, analyse, proposalCsv, IMPORT_MAX_BYTES} from './logic.mjs';
+
+const $ = id => document.getElementById(id);
+const create = (tag, value, klass) => { const e = document.createElement(tag); if (value !== undefined) e.textContent = value; if (klass) e.className = klass; return e; };
+let cohorts = [], result = analyse([]), epoch = 0, busy = false;
+const reviews = new Map();
+const issuedObjectURLs = new Set();
+
+function clearFile() { $('file').value = ''; }
+function setStatus(value, klass = '') { $('message').textContent = value; $('message').className = klass; }
+function clearAll() {
+  ++epoch; // invalidate any pending asynchronous file read
+  cohorts = [];
+  result = analyse([]);
+  reviews.clear();
+  busy = false;
+  clearFile();
+  $('gp').value = '';
+  $('kind').selectedIndex = 0;
+  $('source-check').checked = false;
+  $('coverage-check').checked = false;
+  for (const url of issuedObjectURLs) URL.revokeObjectURL(url);
+  issuedObjectURLs.clear();
+  setStatus('Session cleared. Browser and operating-system memory cannot be securely erased by a webpage.');
+  render();
 }
-$('form').addEventListener('submit',async e=>{e.preventDefault();const f=$('file').files?.[0];const gp=$('gp').value.trim().replace(/\s+/g,' ');const msg=$('message');msg.className='';if(!f||!gp){msg.textContent='Select a file and GP.';return;}if(f.size>8_000_000){msg.textContent='Rejected: file too large.';msg.className='error';return;}try{const {ids,duplicates}=validateEmisCsv(await f.text());const kind=$('kind').value;if(cohorts.some(c=>c.kind===kind&&c.gp.toLowerCase()===gp.toLowerCase()))throw Error('That GP/search type is already imported. Remove the old cohort first to replace it.');cohorts.push({kind,gp,ids});reviews.clear();msg.textContent=`Accepted ${ids.length} unique EMIS numbers. ${duplicates} duplicate rows ignored. Everything remains in this tab.`;msg.className='ok';$('file').value='';render();}catch(error){msg.textContent=error.message;msg.className='error';}});
-$('reset').addEventListener('click',()=>{if(!confirm('Clear all imported patient identifiers and reviews from this tab?'))return;cohorts=[];reviews.clear();$('file').value='';$('message').textContent='Session cleared.';render();});
-$('toggleGuide').addEventListener('click',()=>{const hide=!$('guide').hidden;$('guide').hidden=hide;$('toggleGuide').textContent=hide?'Show guide':'Hide guide';$('toggleGuide').setAttribute('aria-expanded',String(!hide));});
-$('download').addEventListener('click',()=>{if(!result.pairs.length)return;const text=['"Swap","EMIS number","Current GP","Proposed GP","Status"',...result.pairs.flatMap((p,i)=>[p.first,p.second].map(c=>[i+1,c.id,c.from,c.to,reviews.get(c.id)||'For review'].map(safeCsvField).join(',')))].join('\r\n')+'\r\n';
- const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='continuitybuddy-swap-proposal.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
-$('print').addEventListener('click',()=>window.print());render();
+function render() {
+  const cohortBody = $('cohorts');
+  cohortBody.replaceChildren();
+  if (cohorts.length === 0) {
+    const tr = create('tr'); const td = create('td', 'No cohorts imported yet.', 'empty');
+    td.colSpan = 4; tr.append(td); cohortBody.append(tr);
+  }
+  cohorts.forEach((c, index) => {
+    const tr = create('tr');
+    [({owner:'A · Usual GP',seen:'B · Seen 4+',notseen:'C · Not seen'})[c.kind], c.gp, String(c.ids.length)].forEach(value => tr.append(create('td', value)));
+    const td = create('td'), button = create('button', 'Remove', 'secondary small');
+    button.addEventListener('click', () => { ++epoch; cohorts.splice(index, 1); reviews.clear(); $('coverage-check').checked = false; render(); });
+    td.append(button); tr.append(td); cohortBody.append(tr);
+  });
+  result = analyse(cohorts);
+  $('metricOwners').textContent = result.ownerCount;
+  $('metricEligible').textContent = result.eligible.length;
+  $('metricPairs').textContent = result.pairs.length;
+  $('metricUnmatched').textContent = result.unmatched.length;
+  const warnings = [];
+  if (result.conflicts.length) warnings.push(result.conflicts.length + ' conflicting usual-GP assignments excluded.');
+  if (result.contradictoryCount) warnings.push(result.contradictoryCount + ' contradictory seen/not-seen records excluded.');
+  if (result.incomplete.length) warnings.push('Missing A/B/C cohorts for: ' + result.incomplete.join(', ') + '. Recommendations withheld.');
+  if (cohorts.length && result.incomplete.length === 0)
+    warnings.push('Only imported GPs are assessed. Confirm every GP in scope is included before exporting.');
+  $('warnings').textContent = warnings.join(' ');
+  const canExport = result.pairs.length > 0 && result.incomplete.length === 0 && $('coverage-check').checked;
+  $('download').disabled = !canExport;
+  $('print').disabled = !canExport;
+  $('submit-import').disabled = busy;
+  const tbody = $('swaps'); tbody.replaceChildren();
+  if (result.pairs.length === 0) {
+    const tr = create('tr'), td = create('td', 'No reciprocal pairs identified from complete imported cohorts.', 'empty');
+    td.colSpan = 5; tr.append(td); tbody.append(tr);
+  }
+  result.pairs.forEach((pair, index) => [pair.first, pair.second].forEach((candidate, j) => {
+    const tr = create('tr');
+    if (j === 0) { const td = create('td', String(index + 1)); td.rowSpan = 2; tr.append(td); }
+    tr.append(create('td', candidate.id), create('td', candidate.from), create('td', candidate.to));
+    const td = create('td'), select = create('select');
+    select.setAttribute('aria-label', 'Review status for patient in pair ' + (index + 1));
+    for (const value of ['For review', 'Suitable in principle', 'Do not swap']) {
+      const option = create('option', value); option.value = value; select.append(option);
+    }
+    select.value = reviews.get(candidate.id) || 'For review';
+    select.addEventListener('change', () => reviews.set(candidate.id, select.value));
+    td.append(select); tr.append(td); tbody.append(tr);
+  }));
+  const unmatched = $('unmatched');
+  unmatched.replaceChildren();
+  if (result.unmatched.length === 0) unmatched.textContent = 'None identified.';
+  else {
+    unmatched.textContent = result.unmatched.length + ' potential transfer(s) without reciprocal match: ';
+    unmatched.append(create('span', result.unmatched.map(c => c.id + ' (' + c.from + ' → ' + c.to + ')').join('; ')));
+  }
+}
+
+$('form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (busy) return;
+  const file = $('file').files?.[0];
+  const gp = $('gp').value.trim().replace(/\s+/g, ' ');
+  const kind = $('kind').value;
+  if (!file || !/^[\p{L}\p{N}][\p{L}\p{N} .,'()_-]{0,59}$/u.test(gp)) {
+    setStatus('Choose a CSV and a GP label containing letters, numbers or ordinary punctuation.', 'error'); return;
+  }
+  if (!$('source-check').checked) { setStatus('Confirm this is an internal EMIS-number-only export, not an NHS-number export.', 'error'); return; }
+  if (file.size > IMPORT_MAX_BYTES || file.size === 0) { setStatus('Rejected: CSV is empty or exceeds 8 MB.', 'error'); return; }
+  if (cohorts.some(c => c.kind === kind && c.gp.toLowerCase() === gp.toLowerCase())) {
+    setStatus('This GP and search type are already imported. Remove the existing cohort before replacing it.', 'error'); return;
+  }
+  const requestEpoch = ++epoch;
+  busy = true;
+  render();
+  try {
+    const {ids, duplicates} = validateEmisCsv(await file.text());
+    if (epoch !== requestEpoch) return;
+    // Require a single consistent spelling for a GP across all cohorts.
+    if (cohorts.some(c => c.gp.toLowerCase() === gp.toLowerCase() && c.gp !== gp))
+      throw Error('GP label differs in capitalisation from an earlier import.');
+    cohorts.push({kind, gp, ids});
+    reviews.clear();
+    $('coverage-check').checked = false;
+    setStatus('Accepted ' + ids.length + ' unique EMIS identifiers; ' + duplicates + ' duplicate row(s) ignored. All processing stays in this browser tab.', 'ok');
+    clearFile();
+    $('source-check').checked = false;
+  } catch (_error) {
+    if (epoch === requestEpoch) setStatus('Import rejected. Check the exact EMIS Number header, numeric-only rows, file size and GP label. No patient values are shown in errors.', 'error');
+  } finally {
+    if (epoch === requestEpoch) { busy = false; render(); }
+  }
+});
+$('reset').addEventListener('click', () => { if (window.confirm('Clear patient identifiers, matching results and review decisions from this tab?')) clearAll(); });
+$('coverage-check').addEventListener('change', render);
+$('toggleGuide').addEventListener('click', () => {
+  const hide = !$('guide').hidden;
+  $('guide').hidden = hide;
+  $('toggleGuide').textContent = hide ? 'Show guide' : 'Hide guide';
+  $('toggleGuide').setAttribute('aria-expanded', String(!hide));
+});
+$('download').addEventListener('click', () => {
+  if ($('download').disabled) return;
+  const csv = proposalCsv(result, reviews);
+  const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
+  issuedObjectURLs.add(url);
+  const a = create('a'); a.href = url; a.download = 'continuitybuddy-swap-proposal.csv'; a.click();
+  // Downloads are explicitly user-initiated; browsers/OS may retain the downloaded file.
+  setTimeout(() => { URL.revokeObjectURL(url); issuedObjectURLs.delete(url); }, 10_000);
+});
+$('print').addEventListener('click', () => { if (!$('print').disabled) window.print(); });
+window.addEventListener('pagehide', () => {
+  // Best-effort cleanup, not a guarantee of secure deletion.
+  ++epoch; cohorts = []; reviews.clear();
+  for (const url of issuedObjectURLs) URL.revokeObjectURL(url);
+  issuedObjectURLs.clear();
+});
+render();
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  // Registration only: do not activate an update while a tab may contain patient data.
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./service-worker.js', {updateViaCache:'none'}).catch(() => {
+    $('offline-status').textContent = 'Offline installation unavailable. Online use remains possible.';
+  }); });
+}
