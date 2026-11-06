@@ -7,7 +7,8 @@ const headings = {
  date: ['appt date','appointment date','consultation date','event date'],
  clinician: ['staff members full name',"staff member's full name",'consulting clinician','consulting gp','clinician','consultation clinician','seen by'],
  type: ['session holders user type',"session holder's user type",'appointment type','consultation type','slot type','event type'],
- status: ['appointment status','attendance status']
+ role: ['staff role'],
+ status: ['appointment status','attendance status','current slot status']
 };
 const allowed = Object.fromEntries(Object.entries(headings).flatMap(([key,values])=>values.map(value=>[normalise(value),key])));
 export function validateExportHeaders(headers,mode='consultations'){
@@ -17,10 +18,10 @@ export function validateExportHeaders(headers,mode='consultations'){
   const header=normalise(headers[i]);const key=allowed[header];
   if(!header||!key||(mode==='list'&&!['patient','usual'].includes(key))){unexpected++;continue;}
   if(encountered.has(key)){duplicated++;continue;}
-  encountered.add(key);columns[key]=i;
+  encountered.add(key);if(key!=='role')columns[key]=i;
  }
  if(unexpected||duplicated){
-  throw Error('CSV rejected: '+unexpected+' unrecognised or unnecessary column(s), '+duplicated+' duplicate field(s). Export only patient ID, usual GP, appointment date, consulting clinician and optional appointment type/status. No names, NHS numbers, clinical information or demographic columns.');
+  throw Error('CSV rejected: '+unexpected+' unrecognised or unnecessary column(s), '+duplicated+' duplicate field(s). Export the original ContinuityBuddy EMIS report with Patient ID, Usual GP, Appt. Date, Staff Member's Full Name, Staff Role, Slot Type and Current Slot Status. No names, NHS numbers, clinical information or demographic columns.');
  }
  const required=mode==='list'?['patient','usual']:['patient','usual','date','clinician'];
  const missing=required.filter(k=>columns[k]===undefined);
