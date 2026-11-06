@@ -52,7 +52,7 @@ Thanks to **[Dr Neil Paul](https://www.drneilpaul.blog/usualgp/)** for creating 
 - **Reciprocal pairs** = one patient with current usual GP A who predominantly sees B, paired with one patient in the opposite direction. These are unapproved candidate reallocations, not proven appropriate swaps.
 - **Patient list counts from the consultation CSV** include only patients seen in the extract, and must not be used as complete registered-list denominators.
 - A separate whole-list export enables registered-list counts and sessions-weighted workload metrics.
-- Duplicate records are collapsed when patient, consulting GP, date, type and status match. This conservative same-day deduplication may collapse genuinely separate encounters; inspect local EMIS report behaviour before interpreting absolute appointment counts.
+- Identical-looking same-day appointment rows are **retained**, not silently deduplicated. The application flags their count because they could be genuine separate appointments or duplicated report records; inspect local EMIS report behaviour before interpreting absolute attendance counts.
 
 Clinician statuses: **Eligible list holder**, **Count visits, no list**, **Exclude**, **Departed**. Automated systems and triage roles need manual verification. A clinician marked non-list still counts towards appointments/UPC but is not recommended as a new usual GP.
 
