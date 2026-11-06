@@ -1,6 +1,7 @@
-import {parseCsv,guessColumns,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo} from './engine.mjs';
+import {parseCsv,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo} from './engine.mjs';
+import {validateExportHeaders,validateSelectedMapping,filenameIsCsv} from './import-security.mjs';
 const $=id=>document.getElementById(id);
-let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={};
+let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={},validatedHeaders=null;
 const show=(id,on=true)=>{
  $(id).hidden=!on;
  if(['clinicianPanel','resultsPanel'].includes(id)){
@@ -17,9 +18,9 @@ function tableRow(id,values){const tr=text('tr','');for(const v of values){const
 async function load(file){
  try{
   if(file.size>60_000_000)throw Error('File exceeds 60 MB.');
-  if(!/\.csv$/i.test(file.name))throw Error('Please choose a CSV export, not an Excel file.');
-  rows=parseCsv(await file.text());isDemo=false;show('mapPanel');
-  const cols=guessColumns(rows[0]);clear('mappings');
+  if(!filenameIsCsv(file.name))throw Error('Please choose a CSV export, not an Excel file.');
+  rows=parseCsv(await file.text());validatedHeaders=validateExportHeaders(rows[0],'consultations');isDemo=false;show('mapPanel');
+  const cols={...validatedHeaders};clear('mappings');
   for(const [key,title] of [['patient','Patient identifier'],['date','Consultation date'],['clinician','Consulting clinician'],['usual','Usual GP'],['type','Consultation / slot type (optional)'],['status','Attendance status (optional)']]){
    const label=text('label',title);
    const options=[['-1','Not provided'],...rows[0].map((h,i)=>[String(i),h||'Column '+(i+1)])];
@@ -27,20 +28,22 @@ async function load(file){
    label.append(s);$('mappings').append(label);
   }
   $('message').textContent='CSV read locally. '+(rows.length-1).toLocaleString('en-GB')+' rows detected. Confirm column mappings.';$('message').className='status';
- }catch(e){rows=null;show('mapPanel',false);error(e.message);}
+ }catch(e){rows=null;validatedHeaders=null;show('mapPanel',false);error(e.message);}
 }
 function runParsing(){
  try{
   const map=Object.fromEntries(['patient','date','clinician','usual','type','status'].map(k=>[k,Number($('map-'+k).value)]));
+  if(!$('importConfirmed').checked)throw Error('Confirm this is an attended-GP-appointments export from an approved EMIS search.');
+  validateSelectedMapping(validatedHeaders,map);
   const parsed=normaliseConsultations(rows,map,{referenceDate:$('referenceDate').value});
-  events=parsed.events;quality=parsed.quality;isDemo=false;renderClinicians();show('clinicianPanel');show('importPanel',false);show('resultsPanel',false);
+  events=parsed.events;quality=parsed.quality;isDemo=false;$('reviewConfirmed').checked=false;renderClinicians();show('clinicianPanel');show('importPanel',false);show('resultsPanel',false);
  }catch(e){error(e.message);}
 }
 function renderClinicians(){
  clear('clinicians');const clinicians=clinicianCounts(events);
  const names=clinicians.map(c=>c.name);
  for(const c of clinicians){
-  if(statuses[c.name]==null)statuses[c.name]=/^(system|unknown|automated|booking|reception|administrator|admin|emis)/i.test(c.name)?'exclude':'eligible';
+  if(statuses[c.name]==null)statuses[c.name]=/^(system|unknown|automated|booking|reception|administrator|admin|emis)/i.test(c.name)?'exclude':c.usualRows>0?'eligible':'nonlist';
   const status=select([['eligible','Eligible list holder'],['nonlist','Count visits, no list'],['exclude','Exclude from analysis'],['departed','Departed']],statuses[c.name],v=>{statuses[c.name]=v;});
   status.setAttribute('aria-label','Status of '+c.name);
   const alias=select([['','Not merged'],...names.filter(n=>n!==c.name).map(n=>[n,n])],aliases[c.name]||'',v=>{if(v&&aliases[v]===c.name){alias.value='';return;}aliases[c.name]=v;});
@@ -50,6 +53,7 @@ function renderClinicians(){
 }
 function calculate(){
  try{
+  if(!$('reviewConfirmed').checked)throw Error('Confirm you have checked list holders, locums and departed clinicians.');
   const minVisits=Number($('minVisits').value),high=Number($('high').value)/100,medium=Number($('medium').value)/100;
   if(!Number.isInteger(minVisits)||minVisits<1||minVisits>30||high<medium||high>1||medium<0.3)throw Error('Check the thresholds.');
   result=analyse(events,{statuses,aliases,minVisits,high,medium,listSizes,sessions});
@@ -95,13 +99,13 @@ function renderPartnerRows(){
  for(const [gp,c] of ranked)tableRow('partners',[gp,c.from,c.to,Math.min(c.from,c.to)]);
  if(!ranked.length)tableRow('partners',['No matching GP partners','-','-','-']);
 }
-function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};$('file').value='';$('listFile').value='';$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
+function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};validatedHeaders=null;$('importConfirmed').checked=false;$('reviewConfirmed').checked=false;$('file').value='';$('listFile').value='';$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
 $('referenceDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 $('listFile').addEventListener('change',async e=>{
  const file=e.target.files?.[0];if(!file)return;
  try{
   if(file.size>60_000_000||!/\\.csv$/i.test(file.name))throw Error('Choose a CSV under 60 MB.');
-  const data=parseCsv(await file.text()),columns=guessColumns(data[0]);
+  const data=parseCsv(await file.text()),columns=validateExportHeaders(data[0],'list');
   if(columns.patient<0||columns.usual<0)throw Error('List file must contain patient identifier and usual GP columns.');
   const seen=new Map();
   for(const row of data.slice(1)){
@@ -122,7 +126,7 @@ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag
 drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
 $('process').addEventListener('click',runParsing);
-$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;renderClinicians();show('importPanel',false);show('clinicianPanel');});
+$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;renderClinicians();show('importPanel',false);show('clinicianPanel');});
 $('run').addEventListener('click',calculate);
 $('backImport').addEventListener('click',()=>{show('clinicianPanel',false);show('importPanel');});
 $('editClinicians').addEventListener('click',()=>{show('resultsPanel',false);show('clinicianPanel');});
