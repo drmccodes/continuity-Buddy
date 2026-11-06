@@ -5,3 +5,11 @@
 .step-circle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:#e2ebfa;color:#36578c;font-size:17px;font-weight:750}
 .brand{gap:0}
 .hero{padding-top:20px}
+
+/* Safe import confirmations: native accessible checkbox controls. */
+.consent{display:flex;align-items:flex-start;gap:10px;margin:16px 0;padding:13px 15px;background:#f6f9fe;border:1px solid #dfe7f2;border-radius:10px;line-height:1.5;font-size:13px;color:#3e526e}
+.consent input{width:17px;min-width:17px;height:17px;min-height:17px;margin:1px 0 0;accent-color:#315ca4}
+#warnings:not(:empty){padding:12px 15px;border-radius:9px;background:#fff9ed;color:#856126;font-size:13px;line-height:1.5;margin-bottom:14px}
+.privacy-panel{max-width:850px;margin:30px auto;padding:30px;background:white;border:1px solid #e2e8f1;border-radius:16px;line-height:1.7}
+.privacy-panel h1{font-size:32px}.privacy-panel h2{font-size:20px;margin-top:26px}
+@media print{.consent{display:none}}
