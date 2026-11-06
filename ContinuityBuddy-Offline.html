@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+
+<title>ContinuityBuddy - Usual GP continuity</title><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-HzebIDwCPiRkAR+bYxwfbaOEtMW4t3822IkNa0pVKJg='; style-src 'sha256-rWGnqoHbJWdw3JmsTcbWx+a4fJvHG6Wm2m2ZBT+u3bo='; img-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'"><style>:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#22334b;background:#f5f7fb;font-size:15px}*{box-sizing:border-box}body{margin:0}header{display:flex;justify-content:space-between;align-items:center;padding:18px max(22px,calc((100vw - 1150px)/2));background:white;border-bottom:1px solid #e1e7f0;gap:10px}header strong{font-size:21px;letter-spacing:-.8px}header strong span{color:#3466b1}header small{font-size:12px;color:#217654}main{max-width:1150px;margin:auto;padding:22px 22px 60px}.hero{padding:28px 0 12px}.hero h1{font-size:clamp(30px,4.4vw,49px);letter-spacing:-1.8px;margin:0 0 10px}.hero p{color:#596b80;line-height:1.5;max-width:740px;font-size:17px}.steps{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}.steps span{padding:9px 14px;background:#e8f0fe;border:1px solid #d4e2fb;border-radius:25px;font-size:13px;color:#28538e;font-weight:650}.privacy{border:1px solid #c8e4d5;background:#ecf8f0;color:#286749;padding:14px 17px;border-radius:12px;font-size:13px;line-height:1.6}.panel{background:white;border:1px solid #e0e6ee;border-radius:15px;padding:24px;margin-top:20px;box-shadow:0 7px 25px #213a5210}.panelhead{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px}.panel h2{font-size:23px;margin:0}.panel h3{font-size:19px;margin:0 0 12px}.panel p,.panel li{line-height:1.65;color:#526379}.panel a{color:#285eb1;text-decoration:underline;text-underline-offset:3px}.panel details{background:#f8faff;border:1px solid #e1e9f7;padding:15px;border-radius:10px;margin:16px 0}.panel summary{cursor:pointer;font-weight:650}.panel ol{padding-left:22px}.drop{display:grid;gap:10px;place-items:center;text-align:center;padding:42px 20px;border:2px dashed #adc4e7;border-radius:14px;background:#f8fbff;cursor:pointer;margin:20px 0;color:#31588b}.drop span{font-size:13px;color:#6b7b92}.drop.drag{background:#e8f3ff;border-color:#3975c6}.drop input{max-width:280px;font-size:12px}.row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.controls{margin-top:22px}.row label,.mapping label,.panelhead label{display:grid;gap:6px;font-size:12px;font-weight:650;color:#51657a}.mapping{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:18px 0}select,input[type=number],input[type=date]{font:inherit;max-width:100%;border:1px solid #cdd7e6;border-radius:8px;padding:9px;background:white;color:#243b59}input[type=number]{width:110px}button{border:1px solid #3667b0;background:#3667b0;color:white;border-radius:9px;padding:10px 15px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:normal}button:hover{filter:brightness(.94)}button.outline{background:white;color:#315d99;border-color:#cad8ea}.tablewrap{overflow:auto;max-height:570px;border:1px solid #e3e8ef;border-radius:10px}table{border-collapse:collapse;width:100%;min-width:690px;font-size:13px}th{position:sticky;top:0;z-index:1;background:#f1f5fb;text-align:left;font-weight:700;color:#40566f;padding:12px;border-bottom:1px solid #d9e2ef;white-space:nowrap}td{padding:10px 12px;border-bottom:1px solid #eef1f6;vertical-align:middle}tbody tr:hover{background:#f7faff}td select{font-size:12px;max-width:230px}section[hidden],div[hidden]{display:none!important}.status{min-height:20px}.error{color:#b52d47;font-weight:700}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.metrics>div{background:white;padding:18px;border:1px solid #e0e6ee;border-radius:12px;display:grid;gap:8px}.metrics strong{font-size:27px;color:#254a80}.metrics small{color:#65758b}footer{font-size:12px;color:#7d8c9e;text-align:center;padding:22px}@media(max-width:700px){main{padding:18px 12px 35px}.panel{padding:17px}.metrics{grid-template-columns:repeat(2,1fr)}header{padding:15px}.hero{padding-top:14px}}
+.steps a{padding:9px 14px;background:#e8f0fe;border:1px solid #d4e2fb;border-radius:25px;font-size:13px;color:#28538e;font-weight:650;text-decoration:none}.steps a:hover{background:#dce9ff}.step-preview{background:#fbfcff;border-style:dashed;box-shadow:none}.step-preview h2{color:#3b506c}.step-pending{font-size:12px;color:#637991;padding:7px 10px;border-radius:30px;border:1px solid #d8e1ec;background:white;white-space:nowrap}.step-preview p{margin:10px 0 0}.step-preview .step-hint{color:#61748a;font-size:13px}
+
+.offline-banner{border:1px solid #bfdad0;background:#f3faf7;padding:12px;border-radius:10px;margin:12px 0}.check-confirm{display:flex;align-items:center;gap:9px;margin:12px 0;font-weight:500;color:#42546b}.check-confirm input{width:17px;height:17px;flex:none}</style></head>
+<body><header><strong>Continuity<span>Buddy</span></strong><small>Private, local analysis · No uploads</small></header>
+<main>
+<section class="hero"><h1>Better continuity. Fairer GP lists.</h1><p>Understand who patients actually see, find sensible reallocations and plan reciprocal swaps without sending confidential data anywhere.</p><div class="steps"><a href="#importPanel">1. Import</a><a href="#clinicianOverview">2. Check clinicians</a><a href="#resultsOverview">3. Explore results</a></div></section>
+<div class="privacy">Patient data is analysed locally in this tab. For sensitive NHS data, prefer the offline standalone HTML downloaded on an approved device. Nothing is intentionally sent to a server, saved in browser storage or uploaded to GitHub. Clinical and information governance approval is still needed before using real practice data.</div>
+<section class="panel" id="importPanel"><p class="offline-banner"><strong>For real NHS data:</strong> <a href="#">Standalone offline edition (this file)</a>, save it to an approved NHS location and open it in your browser without an internet connection. This version has no external libraries, analytics or server dependency. Use with patient data only after your organisation approves the workflow.</p><div class="panelhead"><h2>1. Import EMIS data</h2><button type="button" id="demo" class="outline">Try with fictional data</button></div>
+<p>First time only: download the <a href="./downloads/Usual_GP_Continuity_Search.xml" download="Usual_GP_Continuity_Search.xml">Download the prebuilt EMIS search (.xml)</a>, import it in <b>EMIS → Reporting → Population Reporting → Import</b>, then run its patient search and attended-appointments report. These original EMIS search files are provided unchanged. <b>Thanks to <a href="https://www.drneilpaul.blog/usualgp/" target="_blank" rel="noopener noreferrer">Dr Neil Paul</a></b> for creating and sharing the searches. They have not yet been independently validated in our EMIS installation.</p>
+<details><summary>Exact EMIS export steps</summary><ol><li>Import the downloaded XML into a practice reporting folder (you need suitable EMIS permissions).</li><li>Run “Usual GP Continuity 1 - Patients seen in last 12 months”.</li><li>Run “Usual GP Continuity 2 - Consultation export”.</li><li>Right-click the second report, then View Results → Export → CSV.</li><li>Tick <b>Replicate patient details for each item</b> and <b>Replicate Usual GP details</b>. Leave “override hidden patients” unticked unless explicitly authorised.</li><li>Choose the CSV below. Do not share identifiable exports in chat or email.</li></ol><p>Steps adapted from <a href="https://www.drneilpaul.blog/usualgp/how-to.html" target="_blank" rel="noopener noreferrer">Dr Neil Paul's EMIS guide</a>. EMIS XML import is documented by <a href="https://cdrc.nhs.uk/resources/emis-resource-centre/cdrc-emis-access/" target="_blank" rel="noopener noreferrer">CDRC</a>. Your practice's permissions/IT policy determine whether imports are allowed on your NHS PC.</p></details>
+<label class="drop" id="drop"><strong>Drop your consultation CSV here</strong><span>Or click to select a .csv file (maximum 60 MB)</span><input id="file" type="file" accept=".csv,text/csv"></label>
+<details><summary>Optional: import the complete registered-patient list</summary><p>For accurate list sizes, export the companion <a href="./downloads/Usual_GP_List_Sizes_Search.xml" download="Usual_GP_List_Sizes_Search.xml">Download the optional list-sizes search (.xml)</a> from EMIS and load its CSV separately. It should have one row per registered patient, including patient ID and Usual GP.</p><input id="listFile" type="file" accept=".csv,text/csv"><p id="listStatus" class="status"></p></details><div id="mapPanel" hidden><h3>Match columns</h3><p>Best guesses are prefilled. Check the required four columns, especially when the EMIS report uses unfamiliar labels.</p><div id="mappings" class="mapping"></div><label class="check-confirm"><input id="importConfirmed" type="checkbox"> I confirm this is the approved EMIS attended-appointment export, with no additional clinical or demographic columns.</label><div class="row"><label>Analysis date <input id="referenceDate" type="date" value="2026-11-06"></label><button id="process">Continue to clinicians</button></div></div>
+<p id="message" class="status" role="status" aria-live="polite"></p>
+</section>
+<section class="panel step-preview" id="clinicianOverview"><div class="panelhead"><h2>2. Check the clinicians</h2><span class="step-pending">After import</span></div><p>Confirm which doctors hold lists, merge duplicate names and exclude non-GP or administrative contacts before analysing continuity.</p><p class="step-hint">Import an EMIS CSV above or select <strong>Try with fictional data</strong> to explore without patient information.</p></section>
+<section class="panel" id="clinicianPanel" hidden><div class="panelhead"><h2>2. Check the clinicians</h2><button id="backImport" class="outline">Back to import</button></div><p>Exclude administrative/booking accounts; mark registrars and locums as “Count visits, no list”; and mark doctors who have left as “Departed”. Duplicate names can be joined together. Duty/triage contacts may distort continuity and should be reviewed.</p><div class="tablewrap"><table><thead><tr><th>Clinician</th><th>Consultations</th><th>Status</th><th>Same as</th></tr></thead><tbody id="clinicians"></tbody></table></div>
+<div class="row controls"><label>Minimum consultations <input id="minVisits" type="number" min="1" max="30" value="4"></label><label>High confidence (%) <input id="high" type="number" min="50" max="100" value="65"></label><label>Medium confidence (%) <input id="medium" type="number" min="30" max="99" value="50"></label><label class="check-confirm"><input id="reviewConfirmed" type="checkbox"> I have reviewed the clinicians, including non-list holders and those who have left.</label><button id="run">Analyse continuity</button></div></section>
+<section class="panel step-preview" id="resultsOverview"><div class="panelhead"><h2>3. Continuity &amp; swaps</h2><span class="step-pending">After clinician review</span></div><p>Explore continuity, compare GP lists, identify reciprocal swaps and export proposals only after individual review.</p><p class="step-hint">Results appear once you analyse the imported data.</p></section>
+<section id="resultsPanel" hidden><div class="panelhead"><h2>3. Continuity & swaps</h2><div class="row"><button id="editClinicians" class="outline">Edit clinicians</button><button id="reset" class="outline">Clear all data</button></div></div><div class="metrics"><div><small>Frequent attenders</small><strong id="mPatients">-</strong></div><div><small>Usual GP accuracy</small><strong id="mAccuracy">-</strong></div><div><small>Mean UPC (most-seen)</small><strong id="mUpc">-</strong></div><div><small>SLICC (recorded usual GP)</small><strong id="mSlicc">-</strong></div></div>
+<div class="panel"><div class="panelhead"><h3>Who should I exchange patients with?</h3><label>My GP list <select id="selectedGp"></select></label></div><p>Ranked by reciprocal, evidence-based candidates. Confirm clinical suitability and patient preferences before any reallocation. A reciprocal pair keeps nominal list counts unchanged.</p><div class="tablewrap"><table><thead><tr><th>Other GP</th><th>Patients leaving your list</th><th>Patients coming to your list</th><th>Potential 1:1 pairs</th></tr></thead><tbody id="partners"></tbody></table></div></div>
+<div class="panel"><div class="panelhead"><h3>Reciprocal swaps</h3><button id="download" class="outline">Export reviewed proposal CSV</button></div><p id="swapCount"></p><div class="tablewrap"><table><thead><tr><th>Pair</th><th>Patient identifier</th><th>Current usual GP</th><th>Proposed GP</th><th>Visits with proposed / total</th><th>Review decision</th></tr></thead><tbody id="swaps"></tbody></table></div></div>
+<div class="panel"><h3>GP continuity breakdown</h3><p>List-holder counts here include only patients represented in the consultation CSV, not the practice's full registered population.</p><div class="tablewrap"><table><thead><tr><th>GP</th><th>Patients seen in export</th><th>Frequent attenders</th><th>Aligned</th><th>Outgoing</th><th>Incoming</th><th>SLICC</th><th>Registered list</th><th>GP sessions/week</th><th>Patients/session</th></tr></thead><tbody id="gpRows"></tbody></table></div></div>
+<div class="panel"><h3>Individual reallocation suggestions</h3><p>High confidence means the most-seen eligible GP accounts for at least the configured percentage of retained contacts. It does not prove clinical suitability.</p><div class="tablewrap"><table><thead><tr><th>Patient identifier</th><th>Current GP</th><th>Most-seen GP</th><th>Visits</th><th>Share</th><th>Confidence</th></tr></thead><tbody id="proposals"></tbody></table></div></div>
+<div class="panel"><h3>Data quality and limitations</h3><div id="quality"></div><p>Appointment/consultation exports cannot establish clinical complexity, patient wishes, actual attendance for every slot type or continuity from non-appointment work. A follow-up registered-list export would be needed for precise whole-practice list balancing.</p><p>Based on published RCGP/One Care and <a href="https://www.drneilpaul.blog/usualgp/" target="_blank" rel="noopener noreferrer">Dr Neil Paul's analyser</a> workflows. Calculations implemented independently. <a href="https://www.rcgp.org.uk/getmedia/d30f95ff-c97d-44de-b91b-927e6c6b6972/Personal-lists-guide.pdf" target="_blank" rel="noopener noreferrer">RCGP SLICC reference</a>.</p></div>
+</section></main><footer>ContinuityBuddy · Browser-only · No external scripts, storage, analytics or remote patient-data API</footer><script>// Pure, dependency-free, browser-safe ContinuityBuddy analysis engine.
+// No network, storage, DOM or logging. All identifiers are confidential.
+function parseCsv(source) {
+  if (typeof source !== 'string' || !source.trim()) throw Error('The file is empty.');
+  if (source.length > 60_000_000) throw Error('CSV exceeds the 60 MB safety limit.');
+  const out=[]; let row=[], field='', quoted=false, afterQuote=false;
+  source=source.replace(/^\uFEFF/,'');
+  for(let i=0;i<source.length;i++){
+    const c=source[i];
+    if(quoted) { if(c==='"' && source[i+1]==='"'){field+='"';i++;} else if(c==='"'){quoted=false;afterQuote=true;}else field+=c; }
+    else if(afterQuote) {if(c===','){row.push(field);field='';afterQuote=false;}else if(c==='\r'||c==='\n'){row.push(field);if(row.some(x=>x.trim()))out.push(row);row=[];field='';afterQuote=false;if(c==='\r'&&source[i+1]==='\n')i++;}else if(c!==' '&&c!=='\t')throw Error('Invalid CSV quoting.');}
+    else if(c==='"'){if(field)throw Error('Invalid CSV quoting.');quoted=true;}
+    else if(c===','){row.push(field);field='';}
+    else if(c==='\r'||c==='\n'){row.push(field);if(row.some(x=>x.trim()))out.push(row);row=[];field='';if(c==='\r'&&source[i+1]==='\n')i++;}
+    else field+=c;
+  }
+  if(quoted)throw Error('Unclosed CSV quote.');
+  row.push(field);if(row.some(x=>x.trim()))out.push(row);
+  if(out.length>500000)throw Error('Too many rows: maximum 500,000.');
+  if(!out.length)throw Error('The file contains no rows.');
+  const width=out[0].length;
+  if(width>150||out.some(r=>r.length!==width))throw Error('CSV rows have inconsistent column counts.');
+  return out;
+}
+const norm=s=>String(s??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ');
+function guessColumns(headers){
+ const rules={
+  patient:[/^(emis )?(patient )?(number|id)$/, /nhs number/,/patient identifier/,/patient id/,/patient number/],
+  date:[/consultation.*date/,/appointment.*date/,/appt.*date/,/^date$/, /event date/],
+  clinician:[/consultation.*(user|clinician|doctor|gp)/,/appointment.*(clinician|user|doctor|gp)/,/consulting (clinician|gp|doctor)/,/seen by/,/staff member.*full name/,/clinician/],
+  usual:[/usual gp/,/registered gp/,/named gp/,/allocated gp/,/usual doctor/],
+  type:[/consultation type/,/appointment type/,/slot type/,/event type/],
+  status:[/appointment status/,/attendance status/]
+ };
+ const used=new Set();const result={};for(const [name,patterns] of Object.entries(rules)){
+  const options=headers.map((h,i)=>({i,h:norm(h)})).filter(x=>!used.has(x.i));
+  const match=patterns.map(p=>options.find(x=>p.test(x.h))).find(Boolean);
+  result[name]=match?.i??-1;if(match)used.add(match.i);
+ }return result;
+}
+function parseDate(value){
+ const s=String(value??'').trim();if(!s)return null;
+ if(/^\d{4}-\d{2}-\d{2}/.test(s)){const d=new Date(s.slice(0,10)+'T12:00:00Z');return Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==s.slice(0,10)?null:s.slice(0,10);}
+ const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const iso=m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return parseDate(iso);}
+ if(/^\d{5}(\.\d+)?$/.test(s)){const d=new Date((Number(s)-25569)*86400000);return Number.isNaN(d.getTime())?null:d.toISOString().slice(0,10);}
+ return null;
+}
+function cell(r,index){return index>=0?String(r[index]??'').trim():'';}
+function normaliseConsultations(rows,map,{referenceDate='2026-11-06',months=12}={}){
+ if(!Array.isArray(rows)||rows.length<2)throw Error('A header and consultation rows are required.');
+ for(const k of ['patient','date','clinician','usual']) if(!Number.isInteger(map[k])||map[k]<0||map[k]>=rows[0].length)throw Error('Please select all four required columns.');
+ if(new Set(['patient','date','clinician','usual'].map(k=>map[k])).size<4)throw Error('Required columns must be different.');
+ const ref=parseDate(referenceDate);if(!ref)throw Error('Invalid analysis date.');
+ const cutoff=new Date(ref+'T12:00:00Z');cutoff.setUTCMonth(cutoff.getUTCMonth()-months);
+ const min=cutoff.toISOString().slice(0,10);
+ let skippedDate=0,skippedOld=0,skippedFuture=0,missingId=0,missingClinician=0,missingUsual=0,excludedStatus=0,duplicates=0;
+ const events=[],unique=new Set();
+ for(const r of rows.slice(1)){
+  const id=cell(r,map.patient),usual=cell(r,map.usual),clinician=cell(r,map.clinician),date=parseDate(cell(r,map.date));
+  if(!id){missingId++;continue;}if(!date){skippedDate++;continue;}if(date<min){skippedOld++;continue;}if(date>ref){skippedFuture++;continue;}
+  if(!clinician){missingClinician++;continue;}if(!usual)missingUsual++;
+  const status=cell(r,map.status);
+  if(/^(cancelled|canceled|did not attend|dna|not attended|booked|pending)$/i.test(status)){excludedStatus++;continue;}
+  const type=cell(r,map.type);
+  const key=JSON.stringify([id,clinician,date,type,status]);
+  if(unique.has(key)){duplicates++;continue;}unique.add(key);
+  events.push({id,usual,clinician,date,type,status});
+ }
+ if(missingId)throw Error(missingId+' rows have no patient identifier. Re-export from EMIS with BOTH replicate patient and usual GP options enabled.');
+ if(!events.length)throw Error('No usable consultations within the selected period.');
+ return {events,quality:{skippedDate,skippedOld,skippedFuture,missingId,missingClinician,missingUsual,excludedStatus,duplicates,totalRows:rows.length-1},window:{start:min,end:ref}};
+}
+function clinicianCounts(events){
+ const counts=new Map();for(const e of events){for(const k of [e.clinician,e.usual])if(k&&!counts.has(k))counts.set(k,{name:k,consultations:0,usualRows:0});if(e.clinician)counts.get(e.clinician).consultations++;if(e.usual)counts.get(e.usual).usualRows++;}
+ return [...counts.values()].sort((a,b)=>b.consultations-a.consultations||a.name.localeCompare(b.name));
+}
+function analyse(events,opts={}){
+ const minVisits=Math.max(1,Number(opts.minVisits)||4),high=Math.min(1,Math.max(0,Number(opts.high??0.65))),medium=Math.min(high,Math.max(0,Number(opts.medium??0.5)));
+ const statuses=opts.statuses||{},aliases=opts.aliases||{},sessions=opts.sessions||{},listSizes=opts.listSizes||{};
+ const statusOf=n=>statuses[n]||'eligible';const canonical=n=>aliases[n]||n;
+ const groups=new Map();let excluded=0;
+ for(const e of events){
+  const doc=canonical(e.clinician),usual=canonical(e.usual);
+  if(statusOf(e.clinician)==='exclude'||statusOf(doc)==='exclude'){excluded++;continue;}
+  if(!groups.has(e.id))groups.set(e.id,{id:e.id,visits:[],usualValues:new Map()});
+  const g=groups.get(e.id);g.visits.push({...e,clinician:doc,usual});
+  if(usual)g.usualValues.set(usual,(g.usualValues.get(usual)||0)+1);
+ }
+ const patients=[],byGp=new Map(),proposals=[],fragmented=[];
+ let totalVisits=0,ownVisits=0,upcSum=0,clearAligned=0,clearMismatch=0;
+ for(const g of groups.values()){
+  const visits=g.visits.sort((a,b)=>a.date.localeCompare(b.date));
+  const counts=new Map();for(const v of visits)counts.set(v.clinician,(counts.get(v.clinician)||0)+1);
+  const n=visits.length;if(!n)continue;
+  const ranked=[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const top=ranked[0][1],tops=ranked.filter(v=>v[1]===top).map(v=>v[0]);
+  const usual=[...g.usualValues.entries()].sort((a,b)=>b[1]-a[1]||b[0].localeCompare(a[0]))[0]?.[0]||'';
+  const matched=counts.get(usual)||0;
+  totalVisits+=n;ownVisits+=matched;
+  if(usual&&!byGp.has(usual))byGp.set(usual,{gp:usual,patients:0,frequent:0,visits:0,ownVisits:0,aligned:0,outgoing:0,incoming:0});
+  if(usual){const s=byGp.get(usual);s.patients++;s.visits+=n;s.ownVisits+=matched;}
+  if(n<minVisits)continue;
+  upcSum+=top/n;
+  const topEligible=tops.filter(t=>statusOf(t)==='eligible');
+  const ownIsTop=tops.includes(usual);
+  const departed=statusOf(usual)==='departed';
+  const clear=top/n>=medium&&tops.length===1&&topEligible.length===1;
+  let category='fragmented',to='',confidence='';
+  if(!usual){category='missing-usual';}
+  else if(g.usualValues.size>1){category='conflicting-usual';}
+  else if(ownIsTop&&!departed){category='aligned';clearAligned++;}
+  else if(clear){to=topEligible[0];category=departed?'departed':'reallocate';confidence=top/n>=high?'high':'medium';clearMismatch++;}
+  else if(departed){category='departed-review';}
+  const p={id:g.id,from:usual,to,n,top,topShare:top/n,ownCount:matched,counts:Object.fromEntries(ranked),category,confidence,dayCount:new Set(visits.map(v=>v.date)).size};
+  patients.push(p);
+  if(usual){byGp.get(usual).frequent++;if(category==='aligned')byGp.get(usual).aligned++;if(to&&to!==usual)byGp.get(usual).outgoing++;}
+  if(to&&to!==usual){proposals.push(p);if(!byGp.has(to))byGp.set(to,{gp:to,patients:0,frequent:0,visits:0,ownVisits:0,aligned:0,outgoing:0,incoming:0});byGp.get(to).incoming++;}
+  else if(category!=='aligned')fragmented.push(p);
+ }
+ proposals.sort((a,b)=>(b.topShare-a.topShare)||(b.n-a.n)||(a.id.localeCompare(b.id)));
+ const pairMap=new Map();
+ for(const p of proposals){const key=[p.from,p.to].sort().join('\u0000');if(!pairMap.has(key))pairMap.set(key,{key,gps:[p.from,p.to].sort(),forward:[],backward:[]});const pair=pairMap.get(key);(p.from===pair.gps[0]?pair.forward:pair.backward).push(p);}
+ const pairs=[];for(const group of pairMap.values())if(group.forward.length&&group.backward.length){
+  const count=Math.min(group.forward.length,group.backward.length);
+  for(let i=0;i<count;i++)pairs.push({a:group.forward[i],b:group.backward[i],gps:group.gps});
+ }
+ const gpRows=[...byGp.values()].map(g=>({...g,slicc:g.visits?g.ownVisits/g.visits:null,registered:listSizes[g.gp]??null,sessions:sessions[g.gp]??null,perSession:(listSizes[g.gp]!=null&&sessions[g.gp]>0)?listSizes[g.gp]/sessions[g.gp]:null})).sort((a,b)=>a.gp.localeCompare(b.gp));
+ const eligible=patients.length;
+ return {patients,proposals,fragmented,pairs,gpRows,excluded,metrics:{patients:groups.size,frequent:eligible,consultations:totalVisits,meanUPC:eligible?upcSum/eligible:null,usualAccuracy:clearAligned+clearMismatch?clearAligned/(clearAligned+clearMismatch):null,slicc:totalVisits?ownVisits/totalVisits:null,clearAligned,clearMismatch}};
+}
+function safeCsv(value){const s=String(value??'');const protectedValue=/^[\s\x00-\x1f]*[=+@\-\t\r]/.test(s)?"'"+s:s;return '"'+protectedValue.replace(/"/g,'""')+'"';}
+function proposalCsv(proposals,decisions={}){
+ const rows=[['Patient ID','Current usual GP','Proposed usual GP','Consultations','Seen proposed GP','Seen usual GP','Share','Confidence','Review decision']];
+ for(const p of proposals)rows.push([p.id,p.from,p.to,p.n,p.top,p.ownCount,(100*p.topShare).toFixed(1)+'%',p.confidence,decisions[p.id]||'For review']);
+ return rows.map(r=>r.map(safeCsv).join(',')).join('\r\n');
+}
+function syntheticDemo(){
+ const events=[];const put=(id,usual,doc,n,offset=0)=>{for(let i=0;i<n;i++)events.push({id,usual,clinician:doc,date:'2026-'+String(1+Math.floor((i+offset)%10)).padStart(2,'0')+'-15',type:'GP',status:'Attended'});};
+ for(let j=1;j<=18;j++){const id='DEMO-'+String(j).padStart(3,'0'),owner=j<=9?'Dr Ash':'Dr Birch',other=owner==='Dr Ash'?'Dr Birch':'Dr Ash';put(id,owner,j%3===0?owner:other,j%3===0?5:6,j);if(j%3!==0)put(id,owner,owner,1,j);}
+ return events;
+}
+
+
+// Only the minimum reporting fields necessary for continuity analysis are accepted.
+// Fail closed on unexpected columns, including accidental clinical or demographic data.
+const normalise = value => String(value ?? '').trim().toLowerCase().replace(/[’‘]/g,"'").replace(/[_.-]+/g,' ').replace(/\s+/g,' ');
+const headings = {
+ patient: ['patient id','patient identifier','emis number','emis id','emis patient id','emis patient number'],
+ usual: ['usual gp','usual gp full name','named gp','registered gp','allocated gp','usual doctor'],
+ date: ['appt date','appointment date','consultation date','event date'],
+ clinician: ['staff members full name',"staff member's full name",'consulting clinician','consulting gp','clinician','consultation clinician','seen by'],
+ type: ['session holders user type',"session holder's user type",'appointment type','consultation type','slot type','event type'],
+ status: ['appointment status','attendance status']
+};
+const allowed = Object.fromEntries(Object.entries(headings).flatMap(([key,values])=>values.map(value=>[normalise(value),key])));
+function validateExportHeaders(headers,mode='consultations'){
+ if(!Array.isArray(headers)||headers.length<2||headers.length>8)throw Error('Unexpected CSV structure. Export only the minimum required fields.');
+ const encountered = new Set(), columns={};let unexpected=0,duplicated=0;
+ for(let i=0;i<headers.length;i++){
+  const header=normalise(headers[i]);const key=allowed[header];
+  if(!header||!key||(mode==='list'&&!['patient','usual'].includes(key))){unexpected++;continue;}
+  if(encountered.has(key)){duplicated++;continue;}
+  encountered.add(key);columns[key]=i;
+ }
+ if(unexpected||duplicated){
+  throw Error('CSV rejected: '+unexpected+' unrecognised or unnecessary column(s), '+duplicated+' duplicate field(s). Export only patient ID, usual GP, appointment date, consulting clinician and optional appointment type/status. No names, NHS numbers, clinical information or demographic columns.');
+ }
+ const required=mode==='list'?['patient','usual']:['patient','usual','date','clinician'];
+ const missing=required.filter(k=>columns[k]===undefined);
+ if(missing.length)throw Error('CSV rejected: required reporting field(s) missing: '+missing.join(', ')+'. Re-export using the ContinuityBuddy EMIS XML.');
+ return columns;
+}
+function validateSelectedMapping(validated,map,mode='consultations'){
+ const required=mode==='list'?['patient','usual']:['patient','usual','date','clinician'];
+ for(const key of required)if(map[key]!==validated[key])throw Error('Column mapping does not match verified minimal-data headings. Check the EMIS export.');
+ for(const key of ['type','status'])if(map[key]!==undefined&&map[key]!==-1&&map[key]!==validated[key])throw Error('Optional column mapping does not match the verified header.');
+ return true;
+}
+function filenameIsCsv(name){return typeof name==='string'&&/\.csv$/i.test(name);}
+
+
+
+
+const $=id=>document.getElementById(id);
+let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={},validatedHeaders=null;
+const show=(id,on=true)=>{
+ $(id).hidden=!on;
+ if(['clinicianPanel','resultsPanel'].includes(id)){
+  $('clinicianOverview').hidden=!$('clinicianPanel').hidden || !$('resultsPanel').hidden;
+  $('resultsOverview').hidden=!$('resultsPanel').hidden;
+ }
+};
+const text=(tag,value)=>{const e=document.createElement(tag);e.textContent=String(value??'');return e;};
+const clear=id=>$(id).replaceChildren();
+const percent=v=>v==null?'Not available':(100*v).toFixed(1)+'%';
+const select=(items,value,change)=>{const s=document.createElement('select');for(const [v,label] of items){const o=text('option',label);o.value=v;s.append(o);}s.value=value;s.addEventListener('change',()=>change(s.value));return s;};
+function error(message){$('message').textContent=message;$('message').className='status error';}
+function tableRow(id,values){const tr=text('tr','');for(const v of values){const td=document.createElement('td');if(v instanceof Node)td.append(v);else td.textContent=String(v??'');tr.append(td);}$(id).append(tr);}
+async function load(file){
+ try{
+  if(file.size>60_000_000)throw Error('File exceeds 60 MB.');
+  if(!filenameIsCsv(file.name))throw Error('Please choose a CSV export, not an Excel file.');
+  rows=parseCsv(await file.text());validatedHeaders=validateExportHeaders(rows[0],'consultations');isDemo=false;show('mapPanel');
+  const cols={...validatedHeaders};clear('mappings');
+  for(const [key,title] of [['patient','Patient identifier'],['date','Consultation date'],['clinician','Consulting clinician'],['usual','Usual GP'],['type','Consultation / slot type (optional)'],['status','Attendance status (optional)']]){
+   const label=text('label',title);
+   const options=[['-1','Not provided'],...rows[0].map((h,i)=>[String(i),h||'Column '+(i+1)])];
+   const s=select(options,String(cols[key]??-1),()=>{});s.id='map-'+key;
+   label.append(s);$('mappings').append(label);
+  }
+  $('message').textContent='CSV read locally. '+(rows.length-1).toLocaleString('en-GB')+' rows detected. Confirm column mappings.';$('message').className='status';
+ }catch(e){rows=null;validatedHeaders=null;show('mapPanel',false);error(e.message);}
+}
+function runParsing(){
+ try{
+  const map=Object.fromEntries(['patient','date','clinician','usual','type','status'].map(k=>[k,Number($('map-'+k).value)]));
+  if(!$('importConfirmed').checked)throw Error('Confirm this is an attended-GP-appointments export from an approved EMIS search.');
+  validateSelectedMapping(validatedHeaders,map);
+  const parsed=normaliseConsultations(rows,map,{referenceDate:$('referenceDate').value});
+  events=parsed.events;quality=parsed.quality;isDemo=false;$('reviewConfirmed').checked=false;renderClinicians();show('clinicianPanel');show('importPanel',false);show('resultsPanel',false);
+ }catch(e){error(e.message);}
+}
+function renderClinicians(){
+ clear('clinicians');const clinicians=clinicianCounts(events);
+ const names=clinicians.map(c=>c.name);
+ for(const c of clinicians){
+  if(statuses[c.name]==null)statuses[c.name]=/^(system|unknown|automated|booking|reception|administrator|admin|emis)/i.test(c.name)?'exclude':c.usualRows>0?'eligible':'nonlist';
+  const status=select([['eligible','Eligible list holder'],['nonlist','Count visits, no list'],['exclude','Exclude from analysis'],['departed','Departed']],statuses[c.name],v=>{statuses[c.name]=v;});
+  status.setAttribute('aria-label','Status of '+c.name);
+  const alias=select([['','Not merged'],...names.filter(n=>n!==c.name).map(n=>[n,n])],aliases[c.name]||'',v=>{if(v&&aliases[v]===c.name){alias.value='';return;}aliases[c.name]=v;});
+  alias.setAttribute('aria-label','Merge '+c.name+' into');
+  tableRow('clinicians',[c.name,c.consultations.toLocaleString('en-GB'),status,alias]);
+ }
+}
+function calculate(){
+ try{
+  if(!$('reviewConfirmed').checked)throw Error('Confirm you have checked list holders, locums and departed clinicians.');
+  const minVisits=Number($('minVisits').value),high=Number($('high').value)/100,medium=Number($('medium').value)/100;
+  if(!Number.isInteger(minVisits)||minVisits<1||minVisits>30||high<medium||high>1||medium<0.3)throw Error('Check the thresholds.');
+  result=analyse(events,{statuses,aliases,minVisits,high,medium,listSizes,sessions});
+  decisions={};show('clinicianPanel',false);show('resultsPanel');renderResults();
+ }catch(e){window.alert(e.message);}
+}
+function renderResults(){
+ const m=result.metrics;
+ $('mPatients').textContent=m.frequent.toLocaleString('en-GB');$('mAccuracy').textContent=percent(m.usualAccuracy);$('mUpc').textContent=percent(m.meanUPC);$('mSlicc').textContent=percent(m.slicc);
+ const names=result.gpRows.filter(g=>statuses[g.gp]!=='exclude').map(g=>g.gp);
+ const selected=$('selectedGp').value;clear('selectedGp');
+ for(const n of names){const o=text('option',n);o.value=n;$('selectedGp').append(o);}
+ if(names.includes(selected))$('selectedGp').value=selected;
+ renderPartnerRows();clear('swaps');clear('gpRows');clear('proposals');
+ $('swapCount').textContent=result.pairs.length+' proposed reciprocal pairs. Export contains only approved rows, after manual review.';
+ result.pairs.forEach((pair,index)=>{
+  for(const p of [pair.a,pair.b]){
+   const decision=select([['For review','For review'],['Approved','Suitable in principle'],['Rejected','Do not swap']],decisions[p.id]||'For review',v=>{decisions[p.id]=v;});
+   decision.setAttribute('aria-label','Review patient '+p.id);
+   tableRow('swaps',[index+1,p.id,p.from,p.to,p.top+' / '+p.n,decision]);
+  }
+ });
+ for(const g of result.gpRows){
+  const session=document.createElement('input');session.type='number';session.min='0.1';session.step='0.5';session.placeholder='-';session.value=sessions[g.gp]??'';
+  session.setAttribute('aria-label','Weekly clinical sessions for '+g.gp);
+  const per=text('span',g.perSession==null?'-':g.perSession.toFixed(1));
+  session.addEventListener('change',()=>{const n=Number(session.value);if(session.value&&n>0&&n<100)sessions[g.gp]=n;else delete sessions[g.gp];per.textContent=listSizes[g.gp]!=null&&sessions[g.gp]? (listSizes[g.gp]/sessions[g.gp]).toFixed(1):'-';});
+  tableRow('gpRows',[g.gp,g.patients,g.frequent,g.aligned,g.outgoing,g.incoming,percent(g.slicc),g.registered??'-',session,per]);
+ }
+ for(const p of result.proposals.slice(0,1500))tableRow('proposals',[p.id,p.from,p.to,p.n,percent(p.topShare),p.confidence]);
+ const q=quality||{};clear('quality');
+ const summary=text('p','Analysed '+m.consultations+' consultations across '+m.patients+' patient identifiers. '+result.excluded+' rows excluded by clinician settings. '+(q.duplicates||0)+' exact duplicates removed; '+(q.missingUsual||0)+' records lacked a usual GP; '+(q.excludedStatus||0)+' non-attended appointments filtered; '+(q.skippedDate||0)+' invalid dates excluded.');$('quality').append(summary);
+}
+function renderPartnerRows(){
+ clear('partners');const mine=$('selectedGp').value;const count=new Map();
+ for(const p of result.proposals){
+  if(p.from!==mine&&p.to!==mine)continue;
+  const other=p.from===mine?p.to:p.from;
+  if(!count.has(other))count.set(other,{from:0,to:0});
+  const item=count.get(other);if(p.from===mine)item.from++;else item.to++;
+ }
+ const ranked=[...count.entries()].sort((a,b)=>Math.min(b[1].from,b[1].to)-Math.min(a[1].from,a[1].to)||b[1].from+b[1].to-a[1].from-a[1].to);
+ for(const [gp,c] of ranked)tableRow('partners',[gp,c.from,c.to,Math.min(c.from,c.to)]);
+ if(!ranked.length)tableRow('partners',['No matching GP partners','-','-','-']);
+}
+function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};validatedHeaders=null;$('importConfirmed').checked=false;$('reviewConfirmed').checked=false;$('file').value='';$('listFile').value='';$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
+$('referenceDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+$('listFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>60_000_000||!/\\.csv$/i.test(file.name))throw Error('Choose a CSV under 60 MB.');
+  const data=parseCsv(await file.text()),columns=validateExportHeaders(data[0],'list');
+  if(columns.patient<0||columns.usual<0)throw Error('List file must contain patient identifier and usual GP columns.');
+  const seen=new Map();
+  for(const row of data.slice(1)){
+   const id=String(row[columns.patient]||'').trim(),gp=String(row[columns.usual]||'').trim();
+   if(!id||!gp)continue;
+   if(seen.has(id)&&seen.get(id)!==gp)throw Error('Conflicting usual GP values for the same patient identifier.');
+   seen.set(id,gp);
+  }
+  if(seen.size===0)throw Error('No registered patient rows were found.');
+  listSizes={};for(const gp of seen.values())listSizes[gp]=(listSizes[gp]||0)+1;
+  $('listStatus').textContent='Loaded '+seen.size+' unique registered patients across '+Object.keys(listSizes).length+' lists. Data stays in memory.';
+  if(result){result=analyse(events,{statuses,aliases,listSizes,sessions,minVisits:Number($('minVisits').value),high:Number($('high').value)/100,medium:Number($('medium').value)/100});renderResults();}
+ }catch(err){$('listStatus').textContent='List import not accepted: '+err.message;}
+});
+$('file').addEventListener('change',e=>{if(e.target.files?.[0])load(e.target.files[0]);});
+const drop=$('drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
+$('process').addEventListener('click',runParsing);
+$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;renderClinicians();show('importPanel',false);show('clinicianPanel');});
+$('run').addEventListener('click',calculate);
+$('backImport').addEventListener('click',()=>{show('clinicianPanel',false);show('importPanel');});
+$('editClinicians').addEventListener('click',()=>{show('resultsPanel',false);show('clinicianPanel');});
+$('reset').addEventListener('click',reset);
+$('selectedGp').addEventListener('change',renderPartnerRows);
+$('download').addEventListener('click',()=>{
+ const reviewed=result.pairs.filter(p=>decisions[p.a.id]==='Approved'&&decisions[p.b.id]==='Approved').flatMap(p=>[p.a,p.b]);
+ if(!reviewed.length){window.alert('Approve both patients in at least one reciprocal pair before exporting.');return;}
+ if(!window.confirm('This download contains confidential patient identifiers. Save it only to an approved NHS location. Continue?'))return;
+ const csv=proposalCsv(reviewed,decisions);
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='continuitybuddy-reviewed-proposals.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),0);
+});
+
+const EMBEDDED_SEARCHES={"Usual_GP_Continuity_Search.xml":"<?xml version=\"1.0\" encoding=\"utf-8\"?><enquiryDocument xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" schemaVersion=\"32.0.0\" version=\"1.0.0\" xmlns=\"http://www.e-mis.com/emisopen\"><id>148630d2-91f6-4f70-bffc-aa06dffe2906</id><creationTime>2026-07-22T09:09:27.3540692+01:00</creationTime><report><id>66c00c19-36f9-48ce-91a5-0d5e7d327673</id><name>Usual GP Continuity 2 — Consultation export (run, then export as CSV)</name><description>One row per attended appointment in the last 12 months, for the Usual GP Continuity Analyser. Export as CSV and load into the analyser — the file never leaves the practice computer. v1.0</description><creationTime>2026-07-22T09:05:33.6224273+01:00</creationTime><author><userInRole>5dce8166-b6fd-4462-8027-0b32148931a8</userInRole></author><populationType>PATIENT</populationType><folder>e342ee08-3455-45c7-a582-1b2d8c3e5f0b</folder><parent parentType=\"POP\"><SearchIdentifier reportGuid=\"62d22f86-b41f-43b3-98ef-0d26b96b9c1d\" /></parent><searchDate>BASELINE</searchDate><listReport><columnGroups><columnGroup><id>061046d4-8aee-5bab-a32e-ebc36ae5f94f</id><logicalTableName>PATIENTS</logicalTableName><displayName>Patient Details</displayName><columnar><listColumn><id>1e2ec198-9dc8-573a-8c6e-2ec30516e6bb</id><column>PATIENT</column><displayName>Patient ID</displayName></listColumn><listColumn><id>b0d037d4-1d35-571c-9c95-b7d3b4110388</id><column>USUAL_GP</column><column>USER_NAME</column><displayName>Usual GP Full Name</displayName></listColumn></columnar></columnGroup></columnGroups><columnGroups><columnGroup><id>380ee3cb-34b8-536a-8825-336bfeafe6bd</id><logicalTableName>APPOINTMENTS</logicalTableName><displayName>Attended appointments — last 12 months</displayName><columnar><listColumn><id>ec130566-adf9-5194-8423-c2006e86dab2</id><column>DATE</column><displayName>Appt. Date</displayName></listColumn><listColumn><id>dfdabeb4-2a50-5323-8a28-9d0c65fe0965</id><column>SESSION_USER</column><column>USER_NAME</column><displayName>Staff Member's Full Name</displayName></listColumn><listColumn><id>39d6b80a-280a-52ab-9a08-d6bcf7c5e762</id><column>SESSION_USER</column><column>USERCATEGORY_TERM</column><displayName>Staff Role</displayName></listColumn><listColumn><id>e3b0abbe-6534-54f7-a7f3-ed1693c96a7e</id><column>SLOT_TYPE_DESCRIPTION</column><displayName>Slot Type</displayName></listColumn><listColumn><id>7c89fb6d-e9c0-50f0-abac-697db6bf6681</id><column>CURRENT_STATUS</column><displayName>Current Slot Status</displayName></listColumn></columnar><criteria><criterion><id>a99bd817-3955-5b80-83cf-088359f47319</id><table>APPOINTMENTS</table><displayName>Attended appointment in the last 12 months</displayName><negation>false</negation><filterAttribute><columnValue><id>06303137-8d33-5e72-9743-689e08e2d30f</id><column>DATE</column><displayName>Appointment Date</displayName><inNotIn>IN</inNotIn><rangeValue><rangeFrom><value><value>-12</value><unit>MONTH</unit><relation>RELATIVE</relation></value><operator>GTEQ</operator></rangeFrom><rangeTo><value><value>0</value><unit>DATE</unit><relation>RELATIVE</relation></value><operator>LTEQ</operator></rangeTo></rangeValue></columnValue><columnValue><id>6903c5fc-6acd-5228-8882-394699cb7ba4</id><column>CURRENT_STATUS</column><displayName>Current Slot Status</displayName><inNotIn>IN</inNotIn><valueSet><id>fa9c5886-e69e-48b5-b11f-b08f812d7c8e</id><codeSystem>EMISINTERNAL</codeSystem><values><value>4</value><displayName>Left</displayName><includeChildren>false</includeChildren></values><values><value>12</value><displayName>Quiet Send In</displayName><includeChildren>false</includeChildren></values><values><value>3</value><displayName>Send In</displayName><includeChildren>false</includeChildren></values><values><value>13</value><displayName>Start Call</displayName><includeChildren>false</includeChildren></values><values><value>9</value><displayName>Telephone - Complete</displayName><includeChildren>false</includeChildren></values><values><value>16</value><displayName>Video - Complete</displayName><includeChildren>false</includeChildren></values><values><value>15</value><displayName>Video - Start Call</displayName><includeChildren>false</includeChildren></values><values><value>7</value><displayName>Visited</displayName><includeChildren>false</includeChildren></values><values><value>6</value><displayName>Walked Out</displayName><includeChildren>false</includeChildren></values></valueSet></columnValue><columnValue><id>1dcacc4c-42b5-43ef-8228-8d76688852c4</id><column>SESSION_USER</column><column>USERCATEGORY</column><displayName>Session Holder's User Type</displayName><inNotIn>IN</inNotIn><valueSet><id>a568b1c1-019c-465d-b467-66fa691714ff</id><codeSystem>EMISINTERNAL</codeSystem><values><value>747afb48-f63d-43ae-93e3-9dfa2e6abffc</value><displayName>Assistant GP</displayName><includeChildren>false</includeChildren></values><values><value>a1525ac9-801f-fafb-1ef7-c02add0b4d11</value><displayName>Associate Practitioner - General Practitioner</displayName><includeChildren>false</includeChildren></values><values><value>2b474cc9-47f0-4b1a-85fc-5fcce261380f</value><displayName>Deputising Doctor</displayName><includeChildren>false</includeChildren></values><values><value>1401f1c7-cfe9-bf09-411b-a8ffc581f9db</value><displayName>General Medical Practitioner</displayName><includeChildren>false</includeChildren></values><values><value>fb693b5e-7c7d-acf0-346b-de5d237d58af</value><displayName>GP Registrar</displayName><includeChildren>false</includeChildren></values><values><value>202f0ffe-f436-4031-bc59-b6ee46192374</value><displayName>Locum GP</displayName><includeChildren>false</includeChildren></values><values><value>bef9bfb7-6768-859b-d5b8-f60ca27ff1bb</value><displayName>Salaried General Practitioner</displayName><includeChildren>false</includeChildren></values><values><value>8082ae4c-5b2a-ba8f-60f2-3b99653ee0d5</value><displayName>Sessional GP</displayName><includeChildren>false</includeChildren></values></valueSet></columnValue></filterAttribute></criterion></criteria></columnGroup></columnGroups></listReport></report><report><id>62d22f86-b41f-43b3-98ef-0d26b96b9c1d</id><name>Usual GP Continuity 1 — Patients seen in last 12 months</name><description>Currently registered regular patients with at least one attended appointment in the last 12 months (relative to run date). Parent population for the consultation export report. v1.0</description><creationTime>2026-07-22T09:08:00.7703784+01:00</creationTime><author><userInRole>5dce8166-b6fd-4462-8027-0b32148931a8</userInRole></author><populationType>PATIENT</populationType><folder>e342ee08-3455-45c7-a582-1b2d8c3e5f0b</folder><parent parentType=\"ACTIVE\" /><searchDate>BASELINE</searchDate><population><criteriaGroup><definition><memberOperator>AND</memberOperator><criteria><criterion><id>6899915d-56d6-5847-a409-5ae6e763efcd</id><table>APPOINTMENTS</table><displayName>Attended appointment in the last 12 months</displayName><negation>false</negation><filterAttribute><columnValue><id>e17b5475-587e-5d69-88d6-dcb8309f17f8</id><column>DATE</column><displayName>Appointment Date</displayName><inNotIn>IN</inNotIn><rangeValue><rangeFrom><value><value>-12</value><unit>MONTH</unit><relation>RELATIVE</relation></value><operator>GTEQ</operator></rangeFrom><rangeTo><value><value>0</value><unit>DATE</unit><relation>RELATIVE</relation></value><operator>LTEQ</operator></rangeTo></rangeValue></columnValue><columnValue><id>f84fa878-2566-53e8-a0cc-284a0ffaab77</id><column>CURRENT_STATUS</column><displayName>Current Slot Status</displayName><inNotIn>IN</inNotIn><valueSet><id>d2f9e2a7-b4ba-491b-a369-b3a516007871</id><codeSystem>EMISINTERNAL</codeSystem><values><value>4</value><displayName>Left</displayName><includeChildren>false</includeChildren></values><values><value>12</value><displayName>Quiet Send In</displayName><includeChildren>false</includeChildren></values><values><value>3</value><displayName>Send In</displayName><includeChildren>false</includeChildren></values><values><value>13</value><displayName>Start Call</displayName><includeChildren>false</includeChildren></values><values><value>9</value><displayName>Telephone - Complete</displayName><includeChildren>false</includeChildren></values><values><value>16</value><displayName>Video - Complete</displayName><includeChildren>false</includeChildren></values><values><value>15</value><displayName>Video - Start Call</displayName><includeChildren>false</includeChildren></values><values><value>7</value><displayName>Visited</displayName><includeChildren>false</includeChildren></values><values><value>6</value><displayName>Walked Out</displayName><includeChildren>false</includeChildren></values></valueSet></columnValue><columnValue><id>096bae1a-daef-485f-a1c8-6aeb9d2ad71d</id><column>SESSION_USER</column><column>USERCATEGORY</column><displayName>Session Holder's User Type</displayName><inNotIn>IN</inNotIn><valueSet><id>54980d84-7779-4076-b195-5fcc2c3d638b</id><codeSystem>EMISINTERNAL</codeSystem><values><value>747afb48-f63d-43ae-93e3-9dfa2e6abffc</value><displayName>Assistant GP</displayName><includeChildren>false</includeChildren></values><values><value>a1525ac9-801f-fafb-1ef7-c02add0b4d11</value><displayName>Associate Practitioner - General Practitioner</displayName><includeChildren>false</includeChildren></values><values><value>2b474cc9-47f0-4b1a-85fc-5fcce261380f</value><displayName>Deputising Doctor</displayName><includeChildren>false</includeChildren></values><values><value>1401f1c7-cfe9-bf09-411b-a8ffc581f9db</value><displayName>General Medical Practitioner</displayName><includeChildren>false</includeChildren></values><values><value>fb693b5e-7c7d-acf0-346b-de5d237d58af</value><displayName>GP Registrar</displayName><includeChildren>false</includeChildren></values><values><value>202f0ffe-f436-4031-bc59-b6ee46192374</value><displayName>Locum GP</displayName><includeChildren>false</includeChildren></values><values><value>bef9bfb7-6768-859b-d5b8-f60ca27ff1bb</value><displayName>Salaried General Practitioner</displayName><includeChildren>false</includeChildren></values><values><value>8082ae4c-5b2a-ba8f-60f2-3b99653ee0d5</value><displayName>Sessional GP</displayName><includeChildren>false</includeChildren></values></valueSet></columnValue></filterAttribute></criterion></criteria></definition><actionIfTrue>SELECT</actionIfTrue><actionIfFalse>REJECT</actionIfFalse><id>d55d9659-3133-5c94-bc9f-b143a1baa1c4</id></criteriaGroup></population></report></enquiryDocument>","Usual_GP_List_Sizes_Search.xml":"<?xml version=\"1.0\" encoding=\"utf-8\"?><enquiryDocument xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" schemaVersion=\"32.0.0\" version=\"1.0.0\" xmlns=\"http://www.e-mis.com/emisopen\"><id>2d11e2c8-a892-4abd-9b8e-5652366d8227</id><creationTime>2026-07-22T17:41:01.8392953+01:00</creationTime><report><id>a58bdd48-6fb7-41d3-b6c1-4ab1d3584f60</id><name>Usual GP List Sizes — All registered patients (run, then export as CSV)</name><description>One row per currently registered regular patient with their recorded Usual GP. For list-size balance analysis (patients per GP vs contracted sessions). Export as CSV with: Exclude report header ON, Replicate patient details for each item ON, Override hidden patients where possible ON. v1.0</description><creationTime>2026-07-20T15:00:00+01:00</creationTime><author><userInRole>5dce8166-b6fd-4462-8027-0b32148931a8</userInRole></author><populationType>PATIENT</populationType><folder>e342ee08-3455-45c7-a582-1b2d8c3e5f0b</folder><parent parentType=\"ACTIVE\" /><searchDate>BASELINE</searchDate><listReport><columnGroups><columnGroup><id>6b183f3d-0c68-5b9b-ac68-3b4e743b30f5</id><logicalTableName>PATIENTS</logicalTableName><displayName>Patient Details</displayName><columnar><listColumn><id>5e2c39d8-36e1-5f9d-bc4c-e0949decc323</id><column>PATIENT</column><displayName>Patient ID</displayName></listColumn><listColumn><id>15c0790c-1432-5a65-aed3-9f2f9a08c58e</id><column>USUAL_GP</column><column>USER_NAME</column><displayName>Usual GP Full Name</displayName></listColumn></columnar></columnGroup></columnGroups></listReport></report></enquiryDocument>"};
+for(const link of document.querySelectorAll('a[download$=".xml"]')){link.addEventListener('click',event=>{event.preventDefault();const name=link.getAttribute('download');const source=EMBEDDED_SEARCHES[name];if(!source)return;const objectUrl=URL.createObjectURL(new Blob([source],{type:'application/xml;charset=utf-8'}));const a=document.createElement('a');a.href=objectUrl;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),10000);});}
+for(const link of document.querySelectorAll('a[href^="https://"]')){link.setAttribute('title','Documentation is linked in the online edition; disabled offline');link.removeAttribute('href');link.removeAttribute('target');}
+</script></body></html>
