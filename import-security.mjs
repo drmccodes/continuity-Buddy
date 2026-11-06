@@ -21,7 +21,7 @@ export function validateExportHeaders(headers,mode='consultations'){
   encountered.add(key);if(key!=='role')columns[key]=i;
  }
  if(unexpected||duplicated){
-  throw Error('CSV rejected: '+unexpected+' unrecognised or unnecessary column(s), '+duplicated+' duplicate field(s). Export the original ContinuityBuddy EMIS report with Patient ID, Usual GP, Appt. Date, Staff Member's Full Name, Staff Role, Slot Type and Current Slot Status. No names, NHS numbers, clinical information or demographic columns.');
+  throw Error('CSV rejected: '+unexpected+' unrecognised or unnecessary column(s), '+duplicated+' duplicate field(s). Export the original ContinuityBuddy EMIS report with Patient ID, Usual GP, Appt. Date, consulting clinician, Staff Role, Slot Type and Current Slot Status. No names, NHS numbers, clinical information or demographic columns.');
  }
  const required=mode==='list'?['patient','usual']:['patient','usual','date','clinician'];
  const missing=required.filter(k=>columns[k]===undefined);
