@@ -26,7 +26,7 @@ const norm=s=>String(s??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ');
 export function guessColumns(headers){
  const rules={
   patient:[/^(emis )?(patient )?(number|id)$/, /nhs number/,/patient identifier/,/patient id/,/patient number/],
-  date:[/consultation.*date/,/appointment.*date/,/appt\\.? date/,/^date$/, /event date/],
+  date:[/consultation.*date/,/appointment.*date/,/appt.*date/,/^date$/, /event date/],
   clinician:[/consultation.*(user|clinician|doctor|gp)/,/appointment.*(clinician|user|doctor|gp)/,/consulting (clinician|gp|doctor)/,/seen by/,/staff member.*full name/,/clinician/],
   usual:[/usual gp/,/registered gp/,/named gp/,/allocated gp/,/usual doctor/],
   type:[/consultation type/,/appointment type/,/slot type/,/event type/],
