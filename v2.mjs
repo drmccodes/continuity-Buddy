@@ -85,7 +85,7 @@ function renderResults(){
  }
  for(const p of result.proposals.slice(0,1500))tableRow('proposals',[p.id,p.from,p.to,p.n,percent(p.topShare),p.confidence]);
  const q=quality||{};clear('quality');
- const summary=text('p','Analysed '+m.consultations+' consultations across '+m.patients+' patient identifiers. '+result.excluded+' rows excluded by clinician settings. '+(q.duplicates||0)+' exact duplicates removed; '+(q.missingUsual||0)+' records lacked a usual GP; '+(q.excludedStatus||0)+' non-attended appointments filtered; '+(q.skippedDate||0)+' invalid dates excluded.');$('quality').append(summary);
+ const summary=text('p','Analysed '+m.consultations+' consultations across '+m.patients+' patient identifiers. '+result.excluded+' rows excluded by clinician settings. '+(q.duplicates||0)+' identical-looking appointment rows retained for review; '+(q.missingUsual||0)+' records lacked a usual GP; '+(q.excludedStatus||0)+' non-attended appointments filtered; '+(q.skippedDate||0)+' invalid dates excluded.');$('quality').append(summary);
 }
 function renderPartnerRows(){
  clear('partners');const mine=$('selectedGp').value;const count=new Map();
