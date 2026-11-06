@@ -3,6 +3,10 @@ import {parseCsv,parseDate,guessColumns,normaliseConsultations,analyse,synthetic
 const csv=['Patient ID,Consultation Date,Consulting clinician,Usual GP,Appointment status','001,02/05/2026,Dr Birch,Dr Ash,Attended','001,02/06/2026,Dr Birch,Dr Ash,Attended','001,02/07/2026,Dr Birch,Dr Ash,Attended','001,02/08/2026,Dr Birch,Dr Ash,Attended','002,02/05/2026,Dr Ash,Dr Birch,Attended','002,02/06/2026,Dr Ash,Dr Birch,Attended','002,02/07/2026,Dr Ash,Dr Birch,Attended','002,02/08/2026,Dr Ash,Dr Birch,Attended','003,02/06/2026,Dr Birch,Dr Birch,Cancelled'].join('\n');
 const rows=parseCsv(csv);assert.equal(rows.length,10);
 assert.deepEqual(parseCsv('A,B\n"1,2","a""b"')[1],['1,2','a"b']);
+assert.deepEqual(parseCsv('Patient ID\tUsual GP\r\n001\tDr Ash')[1],['001','Dr Ash']);
+assert.deepEqual(parseCsv('Patient ID;Usual GP\r\n001;Dr Ash')[1],['001','Dr Ash']);
+assert.deepEqual(parseCsv('Patient ID,Usual GP\r\n001,"Dr Ash, GP"')[1],['001','Dr Ash, GP']);
+assert.throws(()=>parseCsv('Patient ID,Usual GP\r\n001,Dr Ash\r\n002,Dr Birch,Extra'),/row 3 has 3 columns/);
 assert.equal(parseDate('31/01/2026'),'2026-01-31');
 assert.equal(parseDate('31/02/2026'),null);
 const map=guessColumns(rows[0]);assert.equal(map.patient,0);assert.equal(map.usual,3);
