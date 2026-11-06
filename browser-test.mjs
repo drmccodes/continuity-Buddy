@@ -21,7 +21,7 @@ const server = createServer(async (req, res) => {
     const path = route === '/' ? 'index.html' : route.slice(1);
     const bytes = await readFile(join(process.cwd(), path));
     const suffix = '.' + path.split('.').at(-1);
-    res.writeHead(200, {'Content-Type': (types[suffix] || 'text/plain') + ';charset=utf-8','Content-Security-Policy':CSP,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'});
+    res.writeHead(200, {'Content-Type': (types[suffix] || 'text/plain') + ';charset=utf-8','Content-Security-Policy':route === '/service-worker.js' ? CSP.replace("connect-src 'none'", "connect-src 'self'") : CSP,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'});
     res.end(bytes);
   } catch {res.writeHead(404);res.end();}
 });
