@@ -1,6 +1,6 @@
 import {parseCsv,guessColumns,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo} from './engine.mjs';
 const $=id=>document.getElementById(id);
-let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false;
+let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={};
 const show=(id,on=true)=>$(id).hidden=!on;
 const text=(tag,value)=>{const e=document.createElement(tag);e.textContent=String(value??'');return e;};
 const clear=id=>$(id).replaceChildren();
@@ -46,7 +46,7 @@ function calculate(){
  try{
   const minVisits=Number($('minVisits').value),high=Number($('high').value)/100,medium=Number($('medium').value)/100;
   if(!Number.isInteger(minVisits)||minVisits<1||minVisits>30||high<medium||high>1||medium<0.3)throw Error('Check the thresholds.');
-  result=analyse(events,{statuses,aliases,minVisits,high,medium});
+  result=analyse(events,{statuses,aliases,minVisits,high,medium,listSizes,sessions});
   decisions={};show('clinicianPanel',false);show('resultsPanel');renderResults();
  }catch(e){window.alert(e.message);}
 }
@@ -66,7 +66,13 @@ function renderResults(){
    tableRow('swaps',[index+1,p.id,p.from,p.to,p.top+' / '+p.n,decision]);
   }
  });
- for(const g of result.gpRows)tableRow('gpRows',[g.gp,g.patients,g.frequent,g.aligned,g.outgoing,g.incoming,percent(g.slicc)]);
+ for(const g of result.gpRows){
+  const session=document.createElement('input');session.type='number';session.min='0.1';session.step='0.5';session.placeholder='-';session.value=sessions[g.gp]??'';
+  session.setAttribute('aria-label','Weekly clinical sessions for '+g.gp);
+  const per=text('span',g.perSession==null?'-':g.perSession.toFixed(1));
+  session.addEventListener('change',()=>{const n=Number(session.value);if(session.value&&n>0&&n<100)sessions[g.gp]=n;else delete sessions[g.gp];per.textContent=listSizes[g.gp]!=null&&sessions[g.gp]? (listSizes[g.gp]/sessions[g.gp]).toFixed(1):'-';});
+  tableRow('gpRows',[g.gp,g.patients,g.frequent,g.aligned,g.outgoing,g.incoming,percent(g.slicc),g.registered??'-',session,per]);
+ }
  for(const p of result.proposals.slice(0,1500))tableRow('proposals',[p.id,p.from,p.to,p.n,percent(p.topShare),p.confidence]);
  const q=quality||{};clear('quality');
  const summary=text('p','Analysed '+m.consultations+' consultations across '+m.patients+' patient identifiers. '+result.excluded+' rows excluded by clinician settings. '+(q.duplicates||0)+' exact duplicates removed; '+(q.missingUsual||0)+' records lacked a usual GP; '+(q.excludedStatus||0)+' non-attended appointments filtered; '+(q.skippedDate||0)+' invalid dates excluded.');$('quality').append(summary);
@@ -83,7 +89,27 @@ function renderPartnerRows(){
  for(const [gp,c] of ranked)tableRow('partners',[gp,c.from,c.to,Math.min(c.from,c.to)]);
  if(!ranked.length)tableRow('partners',['No matching GP partners','-','-','-']);
 }
-function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;$('file').value='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
+function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};$('file').value='';$('listFile').value='';$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
+$('referenceDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+$('listFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>60_000_000||!/\\.csv$/i.test(file.name))throw Error('Choose a CSV under 60 MB.');
+  const data=parseCsv(await file.text()),columns=guessColumns(data[0]);
+  if(columns.patient<0||columns.usual<0)throw Error('List file must contain patient identifier and usual GP columns.');
+  const seen=new Map();
+  for(const row of data.slice(1)){
+   const id=String(row[columns.patient]||'').trim(),gp=String(row[columns.usual]||'').trim();
+   if(!id||!gp)continue;
+   if(seen.has(id)&&seen.get(id)!==gp)throw Error('Conflicting usual GP values for the same patient identifier.');
+   seen.set(id,gp);
+  }
+  if(seen.size===0)throw Error('No registered patient rows were found.');
+  listSizes={};for(const gp of seen.values())listSizes[gp]=(listSizes[gp]||0)+1;
+  $('listStatus').textContent='Loaded '+seen.size+' unique registered patients across '+Object.keys(listSizes).length+' lists. Data stays in memory.';
+  if(result){result=analyse(events,{statuses,aliases,listSizes,sessions,minVisits:Number($('minVisits').value),high:Number($('high').value)/100,medium:Number($('medium').value)/100});renderResults();}
+ }catch(err){$('listStatus').textContent='List import not accepted: '+err.message;}
+});
 $('file').addEventListener('change',e=>{if(e.target.files?.[0])load(e.target.files[0]);});
 const drop=$('drop');
 drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
