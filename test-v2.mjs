@@ -26,7 +26,14 @@ assert.equal(res.metrics.usualAccuracy,0);
 assert.equal(res.gpRows.length,2);
 assert.equal(analyse(parsed.events,{statuses:{'Dr Birch':'nonlist'}}).proposals.length,1);
 assert.equal(analyse(parsed.events,{statuses:{'Dr Birch':'exclude'}}).proposals.length,1); // Existing Dr Birch list still needs reassignment; its non-excluded contacts point to Dr Ash.
-assert.equal(analyse(syntheticDemo()).pairs.length>0,true);
+const demoEvents=syntheticDemo();
+assert.equal(new Set(demoEvents.map(e=>e.id)).size,240);
+assert.deepEqual([...new Set(demoEvents.map(e=>e.usual))].sort(),['Dr Ash','Dr Birch','Dr Cedar','Dr Dale']);
+assert.equal(clinicianCounts(demoEvents).length,4);
+const demoAnalysis=analyse(demoEvents);
+assert.equal(demoAnalysis.gpRows.length,4);
+assert.equal(demoAnalysis.pairs.length>0,true);
+assert.equal(new Set(demoAnalysis.pairs.flatMap(p=>[p.a.from,p.a.to,p.b.from,p.b.to])).size,4);
 const output=proposalCsv([{id:'=SUM(1)',from:'A',to:'B',n:4,top:4,ownCount:0,topShare:1,confidence:'high'}]);
 assert.match(output,/"'=SUM\(1\)"/);
 assert.throws(()=>normaliseConsultations(parseCsv('Patient ID,Consultation Date,Consulting clinician,Usual GP\n,01/01/2026,Dr A,Dr B'),guessColumns(['Patient ID','Consultation Date','Consulting clinician','Usual GP'])));
