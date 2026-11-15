@@ -4,6 +4,17 @@ import {validateExportHeaders,validateSelectedMapping,filenameIsCsv,extractRepor
 const PATIENT_IMPORTS_ENABLED = false;
 const $=id=>document.getElementById(id);
 let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={},validatedHeaders=null;
+if(!PATIENT_IMPORTS_ENABLED){
+ const localFileControls=document.querySelectorAll('input[type="file"]');
+ if(localFileControls.length){
+  for(const input of localFileControls){input.disabled=true;input.setAttribute('aria-disabled','true');}
+  for(const id of ['prepareCsv','process']){const button=$(id);if(button)button.disabled=true;}
+  const drop=$( 'drop' );if(drop){drop.classList.add('locked');drop.setAttribute('aria-disabled','true');}
+  const notice=$('message');
+  if(notice){notice.textContent='This web-hosted preview cannot open patient files. Download this HTML file and open it locally on an approved NHS device to enable EMIS imports.';notice.className='status error';}
+ }
+}
+
 const show=(id,on=true)=>{
  if(!$(id))return;
  $(id).hidden=!on;
