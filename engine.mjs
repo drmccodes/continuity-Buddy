@@ -153,6 +153,13 @@ export function validWeeklySessions(value){
  return Number.isFinite(value) && value>=0.5 && value<=99.5 && Number.isInteger(value*2);
 }
 
+export function syntheticDemoListBalance(){
+ // Illustrative whole-practice counts: distinct from the 240 demo patients seen in consultation history.
+ return {
+  listSizes:{'Dr Ash':1200,'Dr Birch':1450,'Dr Cedar':1100,'Dr Dale':1350},
+  sessions:{'Dr Ash':6,'Dr Birch':6,'Dr Cedar':5,'Dr Dale':6.5}
+ };
+}
 export function syntheticDemo(){
  // Deterministic, fictional cohort: 240 patients, four list-holding GPs,
  // with aligned consultations, reciprocal swap candidates and mixed attendance.
