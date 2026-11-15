@@ -12,3 +12,17 @@
 .duplicate-merge select{min-width:150px;max-width:100%}
 .merge-item{display:flex;align-items:center;gap:12px;padding:6px 0;font-size:13px}
 .merge-item button{padding:5px 9px}
+
+/* Confirmation is directly associated with the only Analyse action. */
+.review-confirmation{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:14px}
+.review-confirmation .check-confirm{margin:0!important;max-width:min(100%,690px);padding:7px 9px;border:1px solid transparent;border-radius:9px;cursor:pointer}
+.review-confirmation .check-confirm span{line-height:1.4}
+.review-confirmation #run{transition:background-color .15s,border-color .15s;min-height:42px}
+.review-confirmation #run.awaiting-confirmation{background:#e3e7ed;border-color:#d5dbe4;color:#5b6879;cursor:pointer}
+.review-confirmation #run.awaiting-confirmation:hover{filter:none;background:#d9dfe8}
+.review-confirmation .check-confirm.missing-confirmation{border-color:#d94242;background:#fff0f0;color:#a42020}
+.review-confirmation .check-confirm.missing-confirmation span{color:#a42020}
+.review-confirmation .check-confirm.missing-confirmation input{accent-color:#c82d2d;outline:2px solid #d94242;outline-offset:2px}
+.review-confirmation-error{color:#b42323;font-size:13px;font-weight:650;margin:6px 0 0 9px}
+.review-confirmation-error[hidden]{display:none}
+@media(max-width:650px){.review-confirmation{align-items:stretch;flex-direction:column}.review-confirmation #run{align-self:flex-start}}
