@@ -1,4 +1,4 @@
-import {parseCsv,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo,validWeeklySessions} from './engine.mjs';
+import {parseCsv,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo,syntheticDemoListBalance,validWeeklySessions} from './engine.mjs';
 import {validateExportHeaders,validateSelectedMapping,filenameIsCsv,extractReportTable} from './import-security.mjs';
 const $=id=>document.getElementById(id);
 let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={},validatedHeaders=null;
@@ -110,6 +110,11 @@ function calculate(){
 }
 function renderResults(){
  const m=result.metrics;
+ $('listBalanceNote').textContent=isDemo
+  ? 'Fictional example: full GP list sizes and weekly clinical sessions are illustrative. The 240 consultation patients represent only a sample of each list.'
+  : Object.keys(listSizes).length
+   ? 'Registered list sizes are from the separate Step 1B EMIS export. Clinical sessions/week must be entered manually in this table.'
+   : 'Full GP list sizes are not in the consultation export. To fill these columns, import the optional Step 1B registered-patient CSV. Enter weekly clinical sessions manually.';
  $('mPatients').textContent=m.frequent.toLocaleString('en-GB');$('mAccuracy').textContent=percent(m.usualAccuracy);$('mUpc').textContent=percent(m.meanUPC);$('mSlicc').textContent=percent(m.slicc);
  const names=result.gpRows.filter(g=>statuses[g.gp]!=='exclude').map(g=>g.gp);
  const selected=$('selectedGp').value;clear('selectedGp');
@@ -187,7 +192,7 @@ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag
 drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
 $('process').addEventListener('click',runParsing);
-$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;updateReviewConfirmation();renderClinicians();show('importPanel',false);show('clinicianPanel');moveTo('clinicianPanel');});
+$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();({listSizes,sessions}=syntheticDemoListBalance());quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;updateReviewConfirmation();renderClinicians();show('importPanel',false);show('clinicianPanel');moveTo('clinicianPanel');});
 $('addMerge').addEventListener('click',addClinicianMerge);
 $('run').addEventListener('click',calculate);
 $('reviewConfirmed').addEventListener('change',updateReviewConfirmation);
