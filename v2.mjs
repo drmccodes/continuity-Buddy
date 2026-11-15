@@ -1,4 +1,4 @@
-import {parseCsv,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo} from './engine.mjs';
+import {parseCsv,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo,validWeeklySessions} from './engine.mjs';
 import {validateExportHeaders,validateSelectedMapping,filenameIsCsv,extractReportTable} from './import-security.mjs';
 const $=id=>document.getElementById(id);
 let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={},validatedHeaders=null;
@@ -125,10 +125,22 @@ function renderResults(){
   }
  });
  for(const g of result.gpRows){
-  const session=document.createElement('input');session.type='number';session.min='0.1';session.step='0.5';session.placeholder='-';session.value=sessions[g.gp]??'';
+  const session=document.createElement('input');session.type='number';session.min='0.5';session.step='0.5';session.max='99.5';session.placeholder='-';session.value=sessions[g.gp]??'';session.title='Enter a number of sessions in increments of 0.5 (minimum 0.5).';
   session.setAttribute('aria-label','Weekly clinical sessions for '+g.gp);
   const per=text('span',g.perSession==null?'-':g.perSession.toFixed(1));
-  session.addEventListener('change',()=>{const n=Number(session.value);if(session.value&&n>0&&n<100)sessions[g.gp]=n;else delete sessions[g.gp];per.textContent=listSizes[g.gp]!=null&&sessions[g.gp]? (listSizes[g.gp]/sessions[g.gp]).toFixed(1):'-';});
+  session.addEventListener('input',()=>{session.setCustomValidity('');});
+  session.addEventListener('change',()=>{
+   if(session.value.trim()===''){delete sessions[g.gp];per.textContent='-';return;}
+   const n=Number(session.value);
+   if(!validWeeklySessions(n)){
+    session.setCustomValidity('Use whole or half sessions only (0.5, 1, 1.5, 2, etc).');
+    session.reportValidity();
+    return;
+   }
+   session.setCustomValidity('');
+   sessions[g.gp]=n;
+   per.textContent=listSizes[g.gp]!=null?(listSizes[g.gp]/n).toFixed(1):'-';
+  });
   tableRow('gpRows',[g.gp,g.patients,g.frequent,g.aligned,g.outgoing,g.incoming,percent(g.slicc),g.registered??'-',session,per]);
  }
  for(const p of result.proposals.slice(0,1500))tableRow('proposals',[p.id,p.from,p.to,p.n,percent(p.topShare),p.confidence]);
