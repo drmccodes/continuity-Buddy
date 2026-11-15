@@ -13,11 +13,11 @@ export function parseCsv(source,{allowPreamble=false}={}) {
   const c=source[i];
   if(c==='"'){if(quotedHeader&&source[i+1]==='"')i++;else quotedHeader=!quotedHeader;}
   else if(!quotedHeader&&(c==='\r'||c==='\n')){
-    for(const sep of candidates)if(lineCounts[sep]>=2)scores.set(sep,scores.get(sep)+lineCounts[sep]);
+    for(const sep of candidates)if(lineCounts[sep]>=1)scores.set(sep,scores.get(sep)+lineCounts[sep]);
     lineCounts={',':0,';':0,'\t':0};candidateLines++;if(c==='\r'&&source[i+1]==='\n')i++;
   }else if(!quotedHeader&&c in lineCounts)lineCounts[c]++;
  }
- for(const sep of candidates)if(lineCounts[sep]>=2)scores.set(sep,scores.get(sep)+lineCounts[sep]);
+ for(const sep of candidates)if(lineCounts[sep]>=1)scores.set(sep,scores.get(sep)+lineCounts[sep]);
  const sep=candidates.sort((a,b)=>scores.get(b)-scores.get(a))[0];
  const out=[];let row=[],field='',quoted=false,after=false,line=1,start=1;
  function finish(){row.push(field);if(row.some(v=>v.trim()))out.push({row,line:start});row=[];field='';after=false;start=line+1;if(out.length>500000)throw Error('Too many rows: maximum 500,000.');}
