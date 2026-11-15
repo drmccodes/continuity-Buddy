@@ -33,7 +33,7 @@ assert.doesNotMatch(hosted, /<input[^>]*type="file"/i);
 assert.doesNotMatch(hosted, /id="(?:file|listFile|drop|mapPanel|prepareCsv|process)"/);
 assert.doesNotMatch(hosted, /<form[^>]*enctype=/i);
 assert.match(hosted, /Fictional data only|Online demonstration only/);
-assert.match(offline, /const PATIENT_IMPORTS_ENABLED = true;/);
+assert.match(offline, /const PATIENT_IMPORTS_ENABLED = location\.protocol === 'file:';/);
 assert.match(offline, /id="file"/);
 assert.match(offline, /id="listFile"/);
 assert.match(offline, /id="drop"/);
