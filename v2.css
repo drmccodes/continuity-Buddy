@@ -43,3 +43,30 @@
 .gp-breakdown-table tbody td{padding:10px 9px}
 .gp-breakdown-table tbody td:first-child{white-space:nowrap}
 .gp-breakdown-table tbody input[type=number]{width:100%;min-width:0}
+
+/* Site navigation shared with Project RALPH, compact enough for the analyser. */
+header.app-header{padding:0 22px}
+.app-header-inner{width:100%;max-width:1150px;margin:0 auto;min-height:62px;display:flex;justify-content:space-between;align-items:center;gap:18px}
+.app-nav{display:flex;align-items:center;flex-wrap:wrap;gap:16px}
+.app-nav a{text-decoration:none;color:#23466e;font-size:13px;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:7px;padding:6px 2px}
+.app-nav a:hover,.app-nav a:focus-visible{color:#215ea8;background:#ecf3fc}
+.app-nav .ralph-brand{gap:7px;font-size:18px;letter-spacing:.045em;font-weight:750;margin-right:4px;color:#173f70}
+.app-nav .ralph-brand svg{display:block;flex:none;width:23px;height:28px}
+.app-nav .home-link svg{display:block;flex:none}
+.app-header-end{display:flex;align-items:center;gap:16px}
+.app-header-end .app-name{font-size:16px;letter-spacing:-.45px;white-space:nowrap}
+.app-header-end .app-name span{color:#3466b1}
+.app-header-end small{white-space:nowrap}
+@media(max-width:780px){
+ .app-header-inner{min-height:56px;flex-wrap:wrap;gap:0 12px;padding:7px 0}
+ .app-nav{gap:12px}
+ .app-header-end small{display:none}
+}
+@media(max-width:510px){
+ header.app-header{padding:0 14px}
+ .app-header-inner{gap:6px}
+ .app-nav{width:100%;justify-content:space-between;gap:8px}
+ .app-header-end{margin-top:3px}
+ .app-header-end .app-name{font-size:14px}
+ .app-nav .ralph-brand{font-size:16px}
+}
