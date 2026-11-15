@@ -171,7 +171,7 @@ function renderPartnerRows(){
  if(!ranked.length)tableRow('partners',['No matching GP partners','-','-','-']);
 }
 function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};validatedHeaders=null;if($('importConfirmed'))$('importConfirmed').checked=false;$('reviewConfirmed').checked=false;updateReviewConfirmation();if($('file'))$('file').value='';if($('listFile'))$('listFile').value='';if($('listStatus'))$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
-$('referenceDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+if($('referenceDate'))$('referenceDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 $('listFile')?.addEventListener('change',async e=>{
  if(!PATIENT_IMPORTS_ENABLED){e.target.value='';return;}
  const file=e.target.files?.[0];if(!file)return;
