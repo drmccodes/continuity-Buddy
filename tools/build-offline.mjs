@@ -11,10 +11,6 @@ const [index, engine, security, ui, css, search, sizes] = await Promise.all([
  'downloads/Usual_GP_List_Sizes_Search.xml'
 ].map(read));
 
-const sources = {
- 'Usual_GP_Continuity_Search.xml': search,
- 'Usual_GP_List_Sizes_Search.xml': sizes
-};
 // Public: demo-only, with no patient file inputs. Offline: the sole mode
 // allowed to read local EMIS files. Both are built from the same reviewed sources.
 const sourceScript = [engine, security, ui]
