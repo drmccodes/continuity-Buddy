@@ -150,7 +150,36 @@ export function proposalCsv(proposals,decisions={}){
  return rows.map(r=>r.map(safeCsv).join(',')).join('\r\n');
 }
 export function syntheticDemo(){
- const events=[];const put=(id,usual,doc,n,offset=0)=>{for(let i=0;i<n;i++)events.push({id,usual,clinician:doc,date:'2026-'+String(1+Math.floor((i+offset)%10)).padStart(2,'0')+'-15',type:'GP',status:'Attended'});};
- for(let j=1;j<=18;j++){const id='DEMO-'+String(j).padStart(3,'0'),owner=j<=9?'Dr Ash':'Dr Birch',other=owner==='Dr Ash'?'Dr Birch':'Dr Ash';put(id,owner,j%3===0?owner:other,j%3===0?5:6,j);if(j%3!==0)put(id,owner,owner,1,j);}
+ // Deterministic, fictional cohort: 240 patients, four list-holding GPs,
+ // with aligned consultations, reciprocal swap candidates and mixed attendance.
+ const events=[];
+ const doctors=['Dr Ash','Dr Birch','Dr Cedar','Dr Dale'];
+ const put=(id,usual,doc,n,offset=0)=>{
+  for(let i=0;i<n;i++)events.push({
+   id,usual,clinician:doc,
+   date:'2026-'+String(1+(i+offset)%10).padStart(2,'0')+'-'+String(1+(i*3+offset)%27).padStart(2,'0'),
+   type:'GP',status:'Attended'
+  });
+ };
+ for(let j=0;j<240;j++){
+  const id='DEMO-'+String(j+1).padStart(3,'0');
+  const ownerIndex=Math.floor(j/60),usual=doctors[ownerIndex],next=doctors[(ownerIndex+1)%4];
+  const prior=doctors[(ownerIndex+3)%4],pattern=j%6;
+  if(pattern===0||pattern===1){
+   put(id,usual,usual,5+(j%3),j);
+   put(id,usual,next,1,j+2);
+  }else if(pattern===2||pattern===3){
+   // Reciprocal candidates in each direction across the four lists.
+   put(id,usual,next,6+(j%3),j);
+   put(id,usual,usual,1+(j%2),j+3);
+  }else if(pattern===4){
+   put(id,usual,usual,4,j);
+   put(id,usual,prior,3,j+4);
+  }else{
+   put(id,usual,next,4,j);
+   put(id,usual,prior,3,j+2);
+   put(id,usual,usual,1,j+5);
+  }
+ }
  return events;
 }
