@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {parseCsv,parseDate,guessColumns,normaliseConsultations,analyse,syntheticDemo,proposalCsv,clinicianCounts} from './engine.mjs';
+import {parseCsv,parseDate,guessColumns,normaliseConsultations,analyse,syntheticDemo,proposalCsv,clinicianCounts,validWeeklySessions} from './engine.mjs';
 const csv=['Patient ID,Consultation Date,Consulting clinician,Usual GP,Appointment status','001,02/05/2026,Dr Birch,Dr Ash,Attended','001,02/06/2026,Dr Birch,Dr Ash,Attended','001,02/07/2026,Dr Birch,Dr Ash,Attended','001,02/08/2026,Dr Birch,Dr Ash,Attended','002,02/05/2026,Dr Ash,Dr Birch,Attended','002,02/06/2026,Dr Ash,Dr Birch,Attended','002,02/07/2026,Dr Ash,Dr Birch,Attended','002,02/08/2026,Dr Ash,Dr Birch,Attended','003,02/06/2026,Dr Birch,Dr Birch,Cancelled'].join('\n');
 const rows=parseCsv(csv);assert.equal(rows.length,10);
 assert.deepEqual(parseCsv('A,B\n"1,2","a""b"')[1],['1,2','a"b']);
@@ -59,5 +59,12 @@ assert.equal(baseline.metrics.usualAccuracy,1/3);
 assert.equal(baseline.proposals.length,2);
 assert.equal(baseline.pairs.length,1);
 assert.equal(baseline.fragmented.some(p=>p.id==='SYN-D'),true);
+
+
+assert.equal(validWeeklySessions(0.5),true);
+assert.equal(validWeeklySessions(1),true);
+assert.equal(validWeeklySessions(1.5),true);
+assert.equal(validWeeklySessions(10),true);
+for(const invalid of [0,0.1,0.6,1.2,-0.5,100,Infinity,NaN])assert.equal(validWeeklySessions(invalid),false);
 
 console.log('ContinuityBuddy v2 regression tests passed');
