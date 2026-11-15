@@ -42,15 +42,44 @@ function runParsing(){
 }
 function renderClinicians(){
  clear('clinicians');const clinicians=clinicianCounts(events);
- const names=clinicians.map(c=>c.name);
  for(const c of clinicians){
   if(statuses[c.name]==null)statuses[c.name]=/^(system|unknown|automated|booking|reception|administrator|admin|emis)/i.test(c.name)?'exclude':c.usualRows>0?'eligible':'nonlist';
   const status=select([['eligible','Eligible list holder'],['nonlist','Count visits, no list'],['exclude','Exclude from analysis'],['departed','Departed']],statuses[c.name],v=>{statuses[c.name]=v;});
   status.setAttribute('aria-label','Status of '+c.name);
-  const alias=select([['','Not merged'],...names.filter(n=>n!==c.name).map(n=>[n,n])],aliases[c.name]||'',v=>{if(v&&aliases[v]===c.name){alias.value='';return;}aliases[c.name]=v;});
-  alias.setAttribute('aria-label','Merge '+c.name+' into');
-  tableRow('clinicians',[c.name,c.consultations.toLocaleString('en-GB'),status,alias]);
+  tableRow('clinicians',[c.name,c.consultations.toLocaleString('en-GB'),status]);
  }
+ renderMerges(clinicians.map(c=>c.name));
+}
+function renderMerges(names){
+ const from=$('mergeFrom'),into=$('mergeInto'),list=$('activeMerges');
+ const previousFrom=from.value,previousInto=into.value;
+ from.replaceChildren();into.replaceChildren();list.replaceChildren();
+ for(const name of names){
+  const a=text('option',name);a.value=name;from.append(a);
+  const b=text('option',name);b.value=name;into.append(b);
+ }
+ if(names.includes(previousFrom))from.value=previousFrom;
+ if(names.includes(previousInto))into.value=previousInto;
+ else if(names.length>1)into.selectedIndex=1;
+ for(const [source,target] of Object.entries(aliases)){
+  if(!target||!names.includes(source)||!names.includes(target))continue;
+  const item=document.createElement('div');item.className='merge-item';
+  const label=text('span',source+' → '+target);
+  const undo=document.createElement('button');undo.type='button';undo.className='outline';undo.textContent='Undo';
+  undo.setAttribute('aria-label','Undo merge of '+source+' into '+target);
+  undo.addEventListener('click',()=>{delete aliases[source];renderMerges(names);});
+  item.append(label,undo);list.append(item);
+ }
+ if(!list.children.length)list.append(text('p','No names merged.'));
+}
+function addClinicianMerge(){
+ const from=$('mergeFrom').value,into=$('mergeInto').value;
+ if(!from||!into||from===into){window.alert('Choose two different names for the same doctor.');return;}
+ if(aliases[into]){window.alert('Choose a primary name that is not already merged into another name.');return;}
+ // Keep mappings flat: if another name was previously merged into this source, move it to the new primary name.
+ for(const [name,target] of Object.entries(aliases))if(target===from)aliases[name]=into;
+ aliases[from]=into;
+ renderMerges(clinicianCounts(events).map(c=>c.name));
 }
 function calculate(){
  try{
@@ -129,6 +158,7 @@ drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
 $('process').addEventListener('click',runParsing);
 $('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;renderClinicians();show('importPanel',false);show('clinicianPanel');moveTo('clinicianPanel');});
+$('addMerge').addEventListener('click',addClinicianMerge);
 $('run').addEventListener('click',calculate);
 $('runTop').addEventListener('click',calculate);
 $('backImport').addEventListener('click',()=>{show('clinicianPanel',false);show('importPanel');});
