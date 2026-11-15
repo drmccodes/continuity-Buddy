@@ -16,7 +16,7 @@ const [index, engine, security, ui, css, search, sizes] = await Promise.all([
 const sourceScript = [engine, security, ui]
  .map(source => source.replace(/^import .*$/gm, '').replace(/^export /gm, ''))
  .join('\n\n');
-const offlineScript = sourceScript.replace('const PATIENT_IMPORTS_ENABLED = false;', 'const PATIENT_IMPORTS_ENABLED = true;');
+const offlineScript = sourceScript.replace('const PATIENT_IMPORTS_ENABLED = false;', "const PATIENT_IMPORTS_ENABLED = location.protocol === 'file:';");
 if(offlineScript === sourceScript)throw Error('Missing fail-closed import mode switch');
 const sources = {
  'Usual_GP_Continuity_Search.xml': search,
@@ -74,7 +74,7 @@ function assemble(template,script,style){
 }
 const offline=assemble(offlineIndex,offlineScriptComplete,inlineStyle);
 const hosted=assemble(hostedIndex,hostedScript,hostedStyle);
-if(!hosted.includes('PATIENT_IMPORTS_ENABLED = false;')||!offline.includes('PATIENT_IMPORTS_ENABLED = true;'))throw Error('Wrong build permissions');
+if(!hosted.includes('PATIENT_IMPORTS_ENABLED = false;')||!offline.includes("PATIENT_IMPORTS_ENABLED = location.protocol === 'file:';"))throw Error('Wrong build permissions');
 await Promise.all([
  writeFile(new URL('ContinuityBuddy-Offline.html',root),offline,'utf8'),
  writeFile(new URL('ContinuityBuddy-Hosted.html',root),hosted,'utf8')
