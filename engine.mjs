@@ -169,8 +169,9 @@ export function syntheticDemo(){
    put(id,usual,usual,5+(j%3),j);
    put(id,usual,next,1,j+2);
   }else if(pattern===2||pattern===3){
-   // Reciprocal candidates in each direction across the four lists.
-   put(id,usual,next,6+(j%3),j);
+   // Include both directions, so neighbouring GP lists have reciprocal candidates.
+   const target=pattern===2?next:prior;
+   put(id,usual,target,6+(j%3),j);
    put(id,usual,usual,1+(j%2),j+3);
   }else if(pattern===4){
    put(id,usual,usual,4,j);
