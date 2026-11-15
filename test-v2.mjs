@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {parseCsv,parseDate,guessColumns,normaliseConsultations,analyse,syntheticDemo,proposalCsv,clinicianCounts,validWeeklySessions} from './engine.mjs';
+import {parseCsv,parseDate,guessColumns,normaliseConsultations,analyse,syntheticDemo,proposalCsv,clinicianCounts,validWeeklySessions,syntheticDemoListBalance} from './engine.mjs';
 const csv=['Patient ID,Consultation Date,Consulting clinician,Usual GP,Appointment status','001,02/05/2026,Dr Birch,Dr Ash,Attended','001,02/06/2026,Dr Birch,Dr Ash,Attended','001,02/07/2026,Dr Birch,Dr Ash,Attended','001,02/08/2026,Dr Birch,Dr Ash,Attended','002,02/05/2026,Dr Ash,Dr Birch,Attended','002,02/06/2026,Dr Ash,Dr Birch,Attended','002,02/07/2026,Dr Ash,Dr Birch,Attended','002,02/08/2026,Dr Ash,Dr Birch,Attended','003,02/06/2026,Dr Birch,Dr Birch,Cancelled'].join('\n');
 const rows=parseCsv(csv);assert.equal(rows.length,10);
 assert.deepEqual(parseCsv('A,B\n"1,2","a""b"')[1],['1,2','a"b']);
@@ -66,5 +66,20 @@ assert.equal(validWeeklySessions(1),true);
 assert.equal(validWeeklySessions(1.5),true);
 assert.equal(validWeeklySessions(10),true);
 for(const invalid of [0,0.1,0.6,1.2,-0.5,100,Infinity,NaN])assert.equal(validWeeklySessions(invalid),false);
+
+const demoBalance=syntheticDemoListBalance();
+assert.deepEqual(Object.keys(demoBalance.listSizes).sort(),['Dr Ash','Dr Birch','Dr Cedar','Dr Dale']);
+assert.deepEqual(Object.keys(demoBalance.sessions).sort(),['Dr Ash','Dr Birch','Dr Cedar','Dr Dale']);
+for(const [gp,n] of Object.entries(demoBalance.sessions))assert.equal(validWeeklySessions(n),true);
+assert.ok(Object.values(demoBalance.listSizes).every(n=>n>240));
+const balancedDemo=analyse(syntheticDemo(),demoBalance);
+assert.equal(balancedDemo.gpRows.length,4);
+for(const row of balancedDemo.gpRows){
+ assert.equal(row.registered,demoBalance.listSizes[row.gp]);
+ assert.equal(row.sessions,demoBalance.sessions[row.gp]);
+ assert.equal(row.perSession,demoBalance.listSizes[row.gp]/demoBalance.sessions[row.gp]);
+}
+const noListDemo=analyse(syntheticDemo());
+assert.ok(noListDemo.gpRows.every(row=>row.registered===null&&row.perSession===null));
 
 console.log('ContinuityBuddy v2 regression tests passed');
