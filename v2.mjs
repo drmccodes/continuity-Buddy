@@ -37,7 +37,7 @@ function runParsing(){
   if(!$('importConfirmed').checked)throw Error('Confirm this is an attended-GP-appointments export from an approved EMIS search.');
   validateSelectedMapping(validatedHeaders,map);
   const parsed=normaliseConsultations(rows,map,{referenceDate:$('referenceDate').value});
-  events=parsed.events;quality=parsed.quality;isDemo=false;$('reviewConfirmed').checked=false;renderClinicians();show('clinicianPanel');show('importPanel',false);show('resultsPanel',false);moveTo('clinicianPanel');
+  events=parsed.events;quality=parsed.quality;isDemo=false;$('reviewConfirmed').checked=false;updateReviewConfirmation();renderClinicians();show('clinicianPanel');show('importPanel',false);show('resultsPanel',false);moveTo('clinicianPanel');
  }catch(e){error(e.message);}
 }
 function renderClinicians(){
@@ -81,9 +81,27 @@ function addClinicianMerge(){
  aliases[from]=into;
  renderMerges(clinicianCounts(events).map(c=>c.name));
 }
+function updateReviewConfirmation(){
+ const confirmed=$('reviewConfirmed').checked;
+ const button=$('run');
+ button.classList.toggle('awaiting-confirmation',!confirmed);
+ button.setAttribute('aria-disabled',String(!confirmed));
+ if(confirmed){
+  $('reviewConfirmationLabel').classList.remove('missing-confirmation');
+  $('reviewConfirmationError').hidden=true;
+  $('reviewConfirmed').removeAttribute('aria-invalid');
+ }
+}
+function flagMissingReview(){
+ $('reviewConfirmationLabel').classList.add('missing-confirmation');
+ $('reviewConfirmationError').hidden=false;
+ $('reviewConfirmed').setAttribute('aria-invalid','true');
+ $('reviewConfirmationLabel').scrollIntoView({block:'center',behavior:'smooth'});
+ $('reviewConfirmed').focus({preventScroll:true});
+}
 function calculate(){
  try{
-  if(!$('reviewConfirmed').checked){$('reviewConfirmed').focus();$('reviewConfirmed').scrollIntoView({block:'center',behavior:'instant'});throw Error('Tick the clinician review confirmation before analysing.');}
+  if(!$('reviewConfirmed').checked){flagMissingReview();return;}
   const minVisits=Number($('minVisits').value),high=Number($('high').value)/100,medium=Number($('medium').value)/100;
   if(!Number.isInteger(minVisits)||minVisits<1||minVisits>30||high<medium||high>1||medium<0.3)throw Error('Check the thresholds.');
   result=analyse(events,{statuses,aliases,minVisits,high,medium,listSizes,sessions});
@@ -129,7 +147,7 @@ function renderPartnerRows(){
  for(const [gp,c] of ranked)tableRow('partners',[gp,c.from,c.to,Math.min(c.from,c.to)]);
  if(!ranked.length)tableRow('partners',['No matching GP partners','-','-','-']);
 }
-function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};validatedHeaders=null;$('importConfirmed').checked=false;$('reviewConfirmed').checked=false;$('file').value='';$('listFile').value='';$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
+function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};validatedHeaders=null;$('importConfirmed').checked=false;$('reviewConfirmed').checked=false;updateReviewConfirmation();$('file').value='';$('listFile').value='';$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
 $('referenceDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 $('listFile').addEventListener('change',async e=>{
  const file=e.target.files?.[0];if(!file)return;
@@ -157,10 +175,11 @@ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag
 drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
 $('process').addEventListener('click',runParsing);
-$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;renderClinicians();show('importPanel',false);show('clinicianPanel');moveTo('clinicianPanel');});
+$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;updateReviewConfirmation();renderClinicians();show('importPanel',false);show('clinicianPanel');moveTo('clinicianPanel');});
 $('addMerge').addEventListener('click',addClinicianMerge);
 $('run').addEventListener('click',calculate);
-$('runTop').addEventListener('click',calculate);
+$('reviewConfirmed').addEventListener('change',updateReviewConfirmation);
+updateReviewConfirmation();
 $('backImport').addEventListener('click',()=>{show('clinicianPanel',false);show('importPanel');});
 $('editClinicians').addEventListener('click',()=>{show('resultsPanel',false);show('clinicianPanel');});
 $('reset').addEventListener('click',reset);
