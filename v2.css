@@ -102,3 +102,7 @@ header.app-header{padding:0 22px}
  #importPanel .import-intro{margin-bottom:20px}
  #importPanel details{padding:17px}
 }
+
+/* Prevent misleading file affordances when the offline file is viewed over HTTP(S). */
+.drop.locked{opacity:.68;cursor:not-allowed;pointer-events:none}
+.import-action button:disabled{background:#a7b0bc;border-color:#a7b0bc;cursor:not-allowed}
