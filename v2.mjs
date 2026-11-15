@@ -44,7 +44,7 @@ function renderClinicians(){
  clear('clinicians');const clinicians=clinicianCounts(events);
  for(const c of clinicians){
   if(statuses[c.name]==null)statuses[c.name]=/^(system|unknown|automated|booking|reception|administrator|admin|emis)/i.test(c.name)?'exclude':c.usualRows>0?'eligible':'nonlist';
-  const status=select([['eligible','Eligible list holder'],['nonlist','Count visits, no list'],['exclude','Exclude from analysis'],['departed','Departed']],statuses[c.name],v=>{statuses[c.name]=v;});
+  const status=select([['eligible','GP with a list'],['nonlist','Sees patients, no list'],['exclude','Ignore'],['departed','Left the practice']],statuses[c.name],v=>{statuses[c.name]=v;});
   status.setAttribute('aria-label','Status of '+c.name);
   tableRow('clinicians',[c.name,c.consultations.toLocaleString('en-GB'),status]);
  }
