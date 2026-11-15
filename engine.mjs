@@ -149,6 +149,10 @@ export function proposalCsv(proposals,decisions={}){
  for(const p of proposals)rows.push([p.id,p.from,p.to,p.n,p.top,p.ownCount,(100*p.topShare).toFixed(1)+'%',p.confidence,decisions[p.id]||'For review']);
  return rows.map(r=>r.map(safeCsv).join(',')).join('\r\n');
 }
+export function validWeeklySessions(value){
+ return Number.isFinite(value) && value>=0.5 && value<=99.5 && Number.isInteger(value*2);
+}
+
 export function syntheticDemo(){
  // Deterministic, fictional cohort: 240 patients, four list-holding GPs,
  // with aligned consultations, reciprocal swap candidates and mixed attendance.
