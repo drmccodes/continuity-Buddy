@@ -1,8 +1,11 @@
 import {parseCsv,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo,syntheticDemoListBalance,validWeeklySessions} from './engine.mjs';
 import {validateExportHeaders,validateSelectedMapping,filenameIsCsv,extractReportTable} from './import-security.mjs';
+// Build-time switch: the public build fails closed. Only the standalone offline build enables file processing.
+const PATIENT_IMPORTS_ENABLED = false;
 const $=id=>document.getElementById(id);
 let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={},validatedHeaders=null;
 const show=(id,on=true)=>{
+ if(!$(id))return;
  $(id).hidden=!on;
  if(['clinicianPanel','resultsPanel'].includes(id)){
   $('clinicianOverview').hidden=!$('clinicianPanel').hidden || !$('resultsPanel').hidden;
@@ -17,6 +20,7 @@ const select=(items,value,change)=>{const s=document.createElement('select');for
 function error(message){$('message').textContent=message;$('message').className='status error';}
 function tableRow(id,values){const tr=text('tr','');for(const v of values){const td=document.createElement('td');if(v instanceof Node)td.append(v);else td.textContent=String(v??'');tr.append(td);}$(id).append(tr);}
 async function load(file){
+ if(!PATIENT_IMPORTS_ENABLED){error('Patient file imports are unavailable on the public website. Download the offline edition instead.');return;}
  try{
   if(file.size>60_000_000)throw Error('File exceeds 60 MB.');
   if(!filenameIsCsv(file.name))throw Error('Please choose a CSV export, not an Excel file.');
@@ -32,6 +36,7 @@ async function load(file){
  }catch(e){rows=null;validatedHeaders=null;show('mapPanel',false);error(e.message);}
 }
 function runParsing(){
+ if(!PATIENT_IMPORTS_ENABLED){error('The online edition cannot analyse patient files. Use the offline edition.');return;}
  try{
   const map=Object.fromEntries(['patient','date','clinician','usual','type','status'].map(k=>[k,Number($('map-'+k).value)]));
   if(!$('importConfirmed').checked)throw Error('Confirm this is an attended-GP-appointments export from an approved EMIS search.');
@@ -100,6 +105,7 @@ function flagMissingReview(){
  $('reviewConfirmed').focus({preventScroll:true});
 }
 function calculate(){
+ if(!PATIENT_IMPORTS_ENABLED&&!isDemo){window.alert('Only fictional data can be analysed on the public website.');return;}
  try{
   if(!$('reviewConfirmed').checked){flagMissingReview();return;}
   const minVisits=Number($('minVisits').value),high=Number($('high').value)/100,medium=Number($('medium').value)/100;
@@ -164,9 +170,10 @@ function renderPartnerRows(){
  for(const [gp,c] of ranked)tableRow('partners',[gp,c.from,c.to,Math.min(c.from,c.to)]);
  if(!ranked.length)tableRow('partners',['No matching GP partners','-','-','-']);
 }
-function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};validatedHeaders=null;$('importConfirmed').checked=false;$('reviewConfirmed').checked=false;updateReviewConfirmation();$('file').value='';$('listFile').value='';$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
+function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};validatedHeaders=null;if($('importConfirmed'))$('importConfirmed').checked=false;$('reviewConfirmed').checked=false;updateReviewConfirmation();if($('file'))$('file').value='';if($('listFile'))$('listFile').value='';if($('listStatus'))$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
 $('referenceDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-$('listFile').addEventListener('change',async e=>{
+$('listFile')?.addEventListener('change',async e=>{
+ if(!PATIENT_IMPORTS_ENABLED){e.target.value='';return;}
  const file=e.target.files?.[0];if(!file)return;
  try{
   if(file.size>60_000_000||!/\\.csv$/i.test(file.name))throw Error('Choose a CSV under 60 MB.');
@@ -185,13 +192,16 @@ $('listFile').addEventListener('change',async e=>{
   if(result){result=analyse(events,{statuses,aliases,listSizes,sessions,minVisits:Number($('minVisits').value),high:Number($('high').value)/100,medium:Number($('medium').value)/100});renderResults();}
  }catch(err){$('listStatus').textContent='List import not accepted: '+err.message;}
 });
-$('file').addEventListener('change',e=>{show('mapPanel',false);rows=null;validatedHeaders=null;const f=e.target.files?.[0];$('message').textContent=f?'Selected '+f.name+'. Click Process selected CSV.':'';});
-$('prepareCsv').addEventListener('click',()=>{const f=$('file').files?.[0];if(!f){error('Choose a consultation CSV first.');return;}load(f);});
+$('file')?.addEventListener('change',e=>{
+ if(!PATIENT_IMPORTS_ENABLED){e.target.value='';return;}show('mapPanel',false);rows=null;validatedHeaders=null;const f=e.target.files?.[0];$('message').textContent=f?'Selected '+f.name+'. Click Process selected CSV.':'';});
+$('prepareCsv')?.addEventListener('click',()=>{
+ if(!PATIENT_IMPORTS_ENABLED){error('Patient data must be analysed in the offline edition.');return;}const f=$('file').files?.[0];if(!f){error('Choose a consultation CSV first.');return;}load(f);});
 const drop=$('drop');
-drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
-drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
-drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
-$('process').addEventListener('click',runParsing);
+drop?.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop?.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop?.addEventListener('drop',e=>{
+ if(!PATIENT_IMPORTS_ENABLED){e.preventDefault();return;}e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
+$('process')?.addEventListener('click',runParsing);
 $('demo').addEventListener('click',()=>{reset();events=syntheticDemo();({listSizes,sessions}=syntheticDemoListBalance());quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;updateReviewConfirmation();renderClinicians();show('importPanel',false);show('clinicianPanel');moveTo('clinicianPanel');});
 $('addMerge').addEventListener('click',addClinicianMerge);
 $('run').addEventListener('click',calculate);
