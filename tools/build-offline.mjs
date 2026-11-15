@@ -46,8 +46,7 @@ let html = index
  .replace('<script type="module" src="./v2.mjs"></script>', '')
  .replace(/<meta http-equiv="Content-Security-Policy"[^>]+>/, '')
  .replace(/href="https:\/\/(?!projectralph\.co\.uk(?:\/|"))[^"]+"/g, '')
- .replace('href="./ContinuityBuddy-Offline.html" download="ContinuityBuddy-Offline.html"', '')
- .replace('Download the standalone offline version', 'Standalone offline edition (this file)')
+ .replace(/For real NHS data, <a href="\.\/ContinuityBuddy-Offline\.html" download="ContinuityBuddy-Offline\.html">download the standalone offline version<\/a> and use it on an approved NHS device with your organisation's information governance approval\./, "For real NHS data, use this standalone file on an approved NHS device with your organisation's information governance approval.")
  .replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + csp + '"><style>' + style + '</style></head>')
  .replace('</body>', '<script>' + script + '</script></body>');
 if (/<script[^>]+src=|<link[^>]+stylesheet/i.test(html)) throw new Error('External executable asset found');
