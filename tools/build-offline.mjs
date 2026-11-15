@@ -45,7 +45,7 @@ let html = index
  .replace('<link rel="stylesheet" href="./v2.css">', '')
  .replace('<script type="module" src="./v2.mjs"></script>', '')
  .replace(/<meta http-equiv="Content-Security-Policy"[^>]+>/, '')
- .replace(/href="https:\/\/[^"]+"/g, '')
+ .replace(/href="https:\/\/(?!projectralph\.co\.uk(?:\/|"))[^"]+"/g, '')
  .replace('href="./ContinuityBuddy-Offline.html" download="ContinuityBuddy-Offline.html"', '')
  .replace('Download the standalone offline version', 'Standalone offline edition (this file)')
  .replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + csp + '"><style>' + style + '</style></head>')
