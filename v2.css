@@ -26,3 +26,20 @@
 .review-confirmation-error{color:#b42323;font-size:13px;font-weight:650;margin:6px 0 0 9px}
 .review-confirmation-error[hidden]{display:none}
 @media(max-width:650px){.review-confirmation{align-items:stretch;flex-direction:column}.review-confirmation #run{align-self:flex-start}}
+
+/* Results table: compact two-line headings with stable numeric columns. */
+.gp-breakdown-table{table-layout:fixed;min-width:1090px}
+.gp-breakdown-table thead th{white-space:normal;line-height:1.25;vertical-align:bottom;overflow-wrap:normal;word-break:normal;padding:11px 9px}
+.gp-breakdown-table th:nth-child(1){width:100px}
+.gp-breakdown-table th:nth-child(2){width:122px}
+.gp-breakdown-table th:nth-child(3){width:120px}
+.gp-breakdown-table th:nth-child(4){width:73px}
+.gp-breakdown-table th:nth-child(5){width:81px}
+.gp-breakdown-table th:nth-child(6){width:81px}
+.gp-breakdown-table th:nth-child(7){width:74px}
+.gp-breakdown-table th:nth-child(8){width:142px}
+.gp-breakdown-table th:nth-child(9){width:147px}
+.gp-breakdown-table th:nth-child(10){width:150px}
+.gp-breakdown-table tbody td{padding:10px 9px}
+.gp-breakdown-table tbody td:first-child{white-space:nowrap}
+.gp-breakdown-table tbody input[type=number]{width:100%;min-width:0}
