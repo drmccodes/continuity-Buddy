@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
+import {validateExportHeaders,extractReportTable} from './import-security.mjs';
 import {parseCsv,parseDate,guessColumns,normaliseConsultations,analyse,syntheticDemo,proposalCsv,clinicianCounts,validWeeklySessions,syntheticDemoListBalance} from './engine.mjs';
+const emisHeaders=['EMIS Number','Usual GP','Appt. Date','Consulting clinician','Staff Role','Slot Type','Current Slot Status'];
+assert.deepEqual(validateExportHeaders(emisHeaders),{patient:0,usual:1,date:2,clinician:3,type:5,status:6});
+assert.match(
+  (()=>{try{validateExportHeaders([...emisHeaders,'Extra EMIS field']);return '';}catch(error){return error.message;}})(),
+  /Unrecognised headings: column 8: "Extra EMIS field"/
+);
+assert.equal(extractReportTable([emisHeaders,['123','Dr Ash','01/11/2026','Dr Birch','GP','Routine','Attended']]).rows.length,2);
 const csv=['Patient ID,Consultation Date,Consulting clinician,Usual GP,Appointment status','001,02/05/2026,Dr Birch,Dr Ash,Attended','001,02/06/2026,Dr Birch,Dr Ash,Attended','001,02/07/2026,Dr Birch,Dr Ash,Attended','001,02/08/2026,Dr Birch,Dr Ash,Attended','002,02/05/2026,Dr Ash,Dr Birch,Attended','002,02/06/2026,Dr Ash,Dr Birch,Attended','002,02/07/2026,Dr Ash,Dr Birch,Attended','002,02/08/2026,Dr Ash,Dr Birch,Attended','003,02/06/2026,Dr Birch,Dr Birch,Cancelled'].join('\n');
 const rows=parseCsv(csv);assert.equal(rows.length,10);
 assert.deepEqual(parseCsv('A,B\n"1,2","a""b"')[1],['1,2','a"b']);
