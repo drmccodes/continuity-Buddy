@@ -69,6 +69,33 @@ export function extractReportTable(rows,mode='consultations'){
  while(width>required.length && !String(headings[width-1]??'').trim()
    && rows.slice(header+1).every(row=>!String(row[width-1]??'').trim()))width--;
  const tableRows=rows.slice(header).map(row=>row.slice(0,width));
- validateExportHeaders(tableRows[0],mode);
- return {rows:tableRows,skippedMetadataRows:header,headerLine:header+1,ignoredEmptyTrailingColumns:headings.length-width};
+ const columns=validateExportHeaders(tableRows[0],mode);
+ // A blank final EMIS CSV line can be exported as a row of empty cells.
+ // Remove only completely empty trailing rows, not interior blank records.
+ let ignoredEmptyTrailingRows=0;
+ while(tableRows.length>1&&tableRows[tableRows.length-1].every(value=>!String(value??'').trim())){
+  tableRows.pop();ignoredEmptyTrailingRows++;
+ }
+ if(tableRows.length===1)throw Error('EMIS table contains no patient rows.');
+ let continuedPatientRows=0;
+ if(mode==='consultations'){
+  let lastPatient='',lastUsual='';
+  const seenPatients=new Set();
+  for(let i=1;i<tableRows.length;i++){
+   const row=tableRows[i],patient=String(row[columns.patient]??'').trim(),usual=String(row[columns.usual]??'').trim();
+   if(!patient&&!usual){
+    if(!lastPatient||!lastUsual)throw Error('Cannot reconstruct grouped EMIS patients: row '+(header+i+1)+' has no preceding patient and usual GP. Re-export with replicate patient and usual GP enabled.');
+    if(row.every(value=>!String(value??'').trim()))throw Error('Unexpected empty row within the EMIS appointment table at row '+(header+i+1)+'. No data was analysed.');
+    row[columns.patient]=lastPatient;
+    row[columns.usual]=lastUsual;
+    continuedPatientRows++;
+   }else if(patient&&usual){
+    if(seenPatients.has(patient))throw Error('Patient groups are not contiguous in this EMIS export (row '+(header+i+1)+'). Cannot safely reconstruct blank identifiers.');
+    seenPatients.add(patient);lastPatient=patient;lastUsual=usual;
+   }else{
+    throw Error('EMIS row '+(header+i+1)+' has only one of patient identifier and usual GP. Cannot safely reconstruct patient details.');
+   }
+  }
+ }
+ return {rows:tableRows,skippedMetadataRows:header,headerLine:header+1,ignoredEmptyTrailingColumns:headings.length-width,ignoredEmptyTrailingRows,continuedPatientRows};
 }
