@@ -36,6 +36,23 @@ assert.deepEqual(parseCsv('Patient ID;Usual GP\r\n001;Dr Ash')[1],['001','Dr Ash
 assert.deepEqual(parseCsv('Patient ID,Usual GP\r\n001,"Dr Ash, GP"')[1],['001','Dr Ash, GP']);
 assert.throws(()=>parseCsv('Patient ID,Usual GP\r\n001,Dr Ash\r\n002,Dr Birch,Extra'),/row 3 has 3 columns/);
 assert.equal(parseDate('31/01/2026'),'2026-01-31');
+assert.equal(parseDate('10-Dec-2025'),'2025-12-10');
+assert.equal(parseDate('20-Nov-2026'),'2026-11-20');
+assert.equal(parseDate('31-Feb-2026'),null);
+const groupedEmis=[['Patient ID','Usual GP Full Name','Appt. Date',"Staff Member's Full Name",'Staff Role','Slot Type','Current Slot Status',''],
+ ['123','Dr Ash','10-Dec-2025','Dr Birch','General Medical Practitioner','Duty Dr','Telephone - Complete',''],
+ ['','','11-Dec-2025','Dr Birch','General Medical Practitioner','Duty Dr','Left',''],
+ ['456','Dr Birch','12-Dec-2025','Dr Ash','General Medical Practitioner','Duty Dr','Left',''],
+ Array(8).fill('')];
+const groupedExtract=extractReportTable(groupedEmis);
+assert.equal(groupedExtract.continuedPatientRows,1);
+assert.equal(groupedExtract.ignoredEmptyTrailingRows,1);
+const groupedParsed=normaliseConsultations(groupedExtract.rows,validateExportHeaders(groupedExtract.rows[0]),{referenceDate:'2026-11-20'});
+assert.equal(groupedParsed.events.length,3);
+assert.equal(groupedParsed.events[0].id,groupedParsed.events[1].id);
+assert.equal(groupedParsed.events[0].usual,groupedParsed.events[1].usual);
+assert.throws(()=>extractReportTable([groupedEmis[0],groupedEmis[2]]),/no preceding patient/);
+
 assert.equal(parseDate('31/02/2026'),null);
 const map=guessColumns(rows[0]);assert.equal(map.patient,0);assert.equal(map.usual,3);
 const emisMap=guessColumns(['Patient ID','Usual GP Full Name','Appt. Date',"Staff Member's Full Name", "Session Holder's User Type"]);
