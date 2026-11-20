@@ -58,10 +58,17 @@ export function extractReportTable(rows,mode='consultations'){
   throw Error('EMIS column headings were not found. Nothing was analysed.');
  }
  const headings=rows[header];
- validateExportHeaders(headings,mode);
  for(let i=header+1;i<rows.length;i++){
   if(rows[i].length!==headings.length)throw Error('CSV data row '+(i+1)+' has '+rows[i].length+' columns; the actual table header (row '+(header+1)+') has '+headings.length+'. Check the export for an extra separator, missing quotation or footer. No data was analysed.');
  }
  if(rows.length===header+1)throw Error('EMIS table contains no patient rows.');
- return {rows:rows.slice(header),skippedMetadataRows:header,headerLine:header+1};
+ // EMIS sometimes ends every exported row with an unused delimiter. Only discard
+ // trailing blank fields when the corresponding cell is blank on EVERY data row.
+ // Never discard a field containing data, even if its heading is empty.
+ let width=headings.length;
+ while(width>required.length && !String(headings[width-1]??'').trim()
+   && rows.slice(header+1).every(row=>!String(row[width-1]??'').trim()))width--;
+ const tableRows=rows.slice(header).map(row=>row.slice(0,width));
+ validateExportHeaders(tableRows[0],mode);
+ return {rows:tableRows,skippedMetadataRows:header,headerLine:header+1,ignoredEmptyTrailingColumns:headings.length-width};
 }
