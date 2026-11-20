@@ -35,7 +35,11 @@ async function load(file){
  try{
   if(file.size>60_000_000)throw Error('File exceeds 60 MB.');
   if(!filenameIsCsv(file.name))throw Error('Please choose a CSV export, not an Excel file.');
-  const extracted=extractReportTable(parseCsv(await file.text(),{allowPreamble:true}),'consultations');rows=extracted.rows;validatedHeaders=validateExportHeaders(rows[0],'consultations');isDemo=false;show('mapPanel');
+  const bytes=await file.arrayBuffer();
+  let csvText;
+  try{csvText=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
+  catch{csvText=new TextDecoder('windows-1252',{fatal:true}).decode(bytes);}
+  const extracted=extractReportTable(parseCsv(csvText,{allowPreamble:true}),'consultations');rows=extracted.rows;validatedHeaders=validateExportHeaders(rows[0],'consultations');isDemo=false;show('mapPanel');
   const cols={...validatedHeaders};clear('mappings');
   for(const [key,title] of [['patient','Patient identifier'],['date','Consultation date'],['clinician','Consulting clinician'],['usual','Usual GP'],['type','Consultation / slot type (optional)'],['status','Attendance status (optional)']]){
    const label=text('label',title);
