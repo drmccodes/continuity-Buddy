@@ -52,6 +52,17 @@ assert.equal(groupedParsed.events.length,3);
 assert.equal(groupedParsed.events[0].id,groupedParsed.events[1].id);
 assert.equal(groupedParsed.events[0].usual,groupedParsed.events[1].usual);
 assert.throws(()=>extractReportTable([groupedEmis[0],groupedEmis[2]]),/no preceding patient/);
+const repeatedExplicitAnchor=extractReportTable([
+  ['Patient ID','Usual GP Full Name','Appt. Date',"Staff Member's Full Name",'Staff Role','Slot Type','Current Slot Status',''],
+  ['123','Dr Ash','10-Dec-2025','Dr Birch','GP','Routine','Left',''],
+  ['','','11-Dec-2025','Dr Birch','GP','Routine','Left',''],
+  ['456','Dr Birch','12-Dec-2025','Dr Ash','GP','Routine','Left',''],
+  ['123','Dr Ash','13-Dec-2025','Dr Birch','GP','Routine','Left',''],
+  ['','','14-Dec-2025','Dr Birch','GP','Routine','Left','']
+]);
+assert.deepEqual(repeatedExplicitAnchor.rows.slice(1).map(row=>row[0]),['123','123','456','123','123']);
+assert.deepEqual(repeatedExplicitAnchor.rows.slice(1).map(row=>row[1]),['Dr Ash','Dr Ash','Dr Birch','Dr Ash','Dr Ash']);
+
 
 assert.equal(parseDate('31/02/2026'),null);
 const map=guessColumns(rows[0]);assert.equal(map.patient,0);assert.equal(map.usual,3);
