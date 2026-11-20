@@ -8,6 +8,26 @@ assert.match(
   /Unrecognised headings: column 8: "Extra EMIS field"/
 );
 assert.equal(extractReportTable([emisHeaders,['123','Dr Ash','01/11/2026','Dr Birch','GP','Routine','Attended']]).rows.length,2);
+const trailingBlankReport=[
+ ['EMIS appointment report'],[],
+ [...emisHeaders,''],
+ ['123','Dr Ash','01/11/2026','Dr Birch','GP','Routine','Attended',''],
+ ['456','Dr Birch','02/11/2026','Dr Ash','GP','Routine','Attended','']
+];
+const cleaned=extractReportTable(trailingBlankReport);
+assert.equal(cleaned.ignoredEmptyTrailingColumns,1);
+assert.equal(cleaned.rows.length,3);
+assert.deepEqual(cleaned.rows[0],emisHeaders);
+assert.ok(cleaned.rows.every(row=>row.length===7));
+assert.throws(()=>extractReportTable([
+ [...emisHeaders,''],
+ ['123','Dr Ash','01/11/2026','Dr Birch','GP','Routine','Attended','sensitive extra']
+]),/Unrecognised headings: column 8/);
+assert.throws(()=>extractReportTable([
+ [...emisHeaders,''],
+ ['123','Dr Ash','01/11/2026','Dr Birch','GP','Routine','Attended']
+]),/CSV data row 2 has 7 columns/);
+
 const csv=['Patient ID,Consultation Date,Consulting clinician,Usual GP,Appointment status','001,02/05/2026,Dr Birch,Dr Ash,Attended','001,02/06/2026,Dr Birch,Dr Ash,Attended','001,02/07/2026,Dr Birch,Dr Ash,Attended','001,02/08/2026,Dr Birch,Dr Ash,Attended','002,02/05/2026,Dr Ash,Dr Birch,Attended','002,02/06/2026,Dr Ash,Dr Birch,Attended','002,02/07/2026,Dr Ash,Dr Birch,Attended','002,02/08/2026,Dr Ash,Dr Birch,Attended','003,02/06/2026,Dr Birch,Dr Birch,Cancelled'].join('\n');
 const rows=parseCsv(csv);assert.equal(rows.length,10);
 assert.deepEqual(parseCsv('A,B\n"1,2","a""b"')[1],['1,2','a"b']);
