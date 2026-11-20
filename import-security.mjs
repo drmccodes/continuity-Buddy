@@ -14,14 +14,15 @@ const allowed = Object.fromEntries(Object.entries(headings).flatMap(([key,values
 export function validateExportHeaders(headers,mode='consultations'){
  if(!Array.isArray(headers)||headers.length<2||headers.length>8)throw Error('Unexpected CSV structure. Export only the minimum required fields.');
  const encountered = new Set(), columns={};let unexpected=0,duplicated=0;
+ const unexpectedHeadings=[];
  for(let i=0;i<headers.length;i++){
   const header=normalise(headers[i]);const key=allowed[header];
-  if(!header||!key||(mode==='list'&&!['patient','usual'].includes(key))){unexpected++;continue;}
+  if(!header||!key||(mode==='list'&&!['patient','usual'].includes(key))){unexpected++;unexpectedHeadings.push('column '+(i+1)+': '+JSON.stringify(String(headers[i]??'').trim().slice(0,80)));continue;}
   if(encountered.has(key)){duplicated++;continue;}
   encountered.add(key);if(key!=='role')columns[key]=i;
  }
  if(unexpected||duplicated){
-  throw Error('CSV rejected: '+unexpected+' unrecognised or unnecessary column(s), '+duplicated+' duplicate field(s). Export the original ContinuityBuddy EMIS report with Patient ID, Usual GP, Appt. Date, consulting clinician, Staff Role, Slot Type and Current Slot Status. No names, NHS numbers, clinical information or demographic columns.');
+  throw Error('CSV rejected: '+unexpected+' unrecognised or unnecessary column(s), '+duplicated+' duplicate field(s).'+(unexpectedHeadings.length?' Unrecognised headings: '+unexpectedHeadings.join('; ')+'.':'')+' Export the original ContinuityBuddy EMIS report with EMIS Number (or Patient ID), Usual GP, Appt. Date, consulting clinician, Staff Role, Slot Type and Current Slot Status. No patient names, NHS numbers, clinical information or demographic columns.');
  }
  const required=mode==='list'?['patient','usual']:['patient','usual','date','clinician'];
  const missing=required.filter(k=>columns[k]===undefined);
