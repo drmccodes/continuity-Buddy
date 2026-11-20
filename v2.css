@@ -1,0 +1,108 @@
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#22334b;background:#f5f7fb;font-size:15px}*{box-sizing:border-box}body{margin:0}header{display:flex;justify-content:space-between;align-items:center;padding:18px max(22px,calc((100vw - 1150px)/2));background:white;border-bottom:1px solid #e1e7f0;gap:10px}header strong{font-size:21px;letter-spacing:-.8px}header strong span{color:#3466b1}header small{font-size:12px;color:#217654}main{max-width:1150px;margin:auto;padding:24px 22px 64px}.hero{padding:16px 0 0}.hero h1{font-size:clamp(23px,2.2vw,28px);letter-spacing:-.5px;margin:0 0 10px;line-height:1.3}.hero p{color:#596b80;line-height:1.65;max-width:800px;font-size:14px;margin:0}.privacy{border:1px solid #c9e2d6;background:#eef8f2;color:#286749;padding:17px 21px;border-radius:12px;font-size:13px;line-height:1.75;margin:24px 0 30px}.privacy strong{font-weight:700}.privacy a{color:#1d5a8e;font-weight:650;text-underline-offset:3px}.panel{background:white;border:1px solid #e0e6ee;border-radius:16px;padding:32px;margin-top:28px;box-shadow:0 7px 25px #213a5210}.panelhead{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:22px}.panel h2{font-size:23px;margin:0}.panel h3{font-size:19px;margin:0 0 12px}.panel p,.panel li{line-height:1.7;color:#526379}.panel a{color:#285eb1;text-decoration:underline;text-underline-offset:3px}.panel details{background:#f8faff;border:1px solid #e1e9f7;padding:18px 21px;border-radius:11px;margin:24px 0}.panel summary{cursor:pointer;font-weight:650}.panel ol{padding-left:22px}.drop{display:grid;gap:12px;place-items:center;text-align:center;padding:48px 22px;border:2px dashed #adc4e7;border-radius:14px;background:#f8fbff;cursor:pointer;margin:25px 0 18px;color:#31588b}.drop span{font-size:13px;color:#6b7b92}.drop.drag{background:#e8f3ff;border-color:#3975c6}.drop input{max-width:280px;font-size:12px}.row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.controls{margin-top:28px}.row label,.mapping label,.panelhead label{display:grid;gap:6px;font-size:12px;font-weight:650;color:#51657a}.mapping{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:18px 0}select,input[type=number],input[type=date]{font:inherit;max-width:100%;border:1px solid #cdd7e6;border-radius:8px;padding:9px;background:white;color:#243b59}input[type=number]{width:110px}button{border:1px solid #3667b0;background:#3667b0;color:white;border-radius:9px;padding:10px 15px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:normal}button:hover{filter:brightness(.94)}button.outline{background:white;color:#315d99;border-color:#cad8ea}.tablewrap{overflow:auto;max-height:570px;border:1px solid #e3e8ef;border-radius:10px}table{border-collapse:collapse;width:100%;min-width:690px;font-size:13px}th{position:sticky;top:0;z-index:1;background:#f1f5fb;text-align:left;font-weight:700;color:#40566f;padding:12px;border-bottom:1px solid #d9e2ef;white-space:nowrap}td{padding:10px 12px;border-bottom:1px solid #eef1f6;vertical-align:middle}tbody tr:hover{background:#f7faff}td select{font-size:12px;max-width:230px}section[hidden],div[hidden]{display:none!important}.status{min-height:20px}.error{color:#b52d47;font-weight:700}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.metrics>div{background:white;padding:18px;border:1px solid #e0e6ee;border-radius:12px;display:grid;gap:8px}.metrics strong{font-size:27px;color:#254a80}.metrics small{color:#65758b}footer{font-size:12px;color:#7d8c9e;text-align:center;padding:22px}@media(max-width:700px){main{padding:18px 12px 35px}.panel{padding:17px}.metrics{grid-template-columns:repeat(2,1fr)}header{padding:15px}.hero{padding-top:8px}}
+.step-preview{background:#fbfcff;border-style:dashed;box-shadow:none}.step-preview h2{color:#3b506c}.step-pending{font-size:12px;color:#637991;padding:7px 10px;border-radius:30px;border:1px solid #d8e1ec;background:white;white-space:nowrap}.step-preview p{margin:14px 0 0}.step-preview .step-hint{color:#61748a;font-size:13px}
+
+.review-action{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:16px 0;background:#f1f7ff;border:1px solid #c9ddf6;border-radius:12px;padding:15px 18px}.review-action p{margin:4px 0 0;font-size:13px}.review-action button,.import-action button{font-size:15px;padding:13px 21px}.import-action{margin:18px 0 30px}.check-confirm{display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;max-width:800px}.check-confirm input{width:18px;height:18px;flex-shrink:0}.review-action strong{color:#2b4b78}#clinicianPanel,#resultsPanel,#mapPanel{scroll-margin-top:18px}@media(max-width:650px){.review-action button,.import-action button{width:100%}.review-action{align-items:stretch}}
+
+/* Duplicate clinician merge is intentionally secondary to the main clinician review. */
+.duplicate-merge{margin:14px 0 16px;padding:12px 16px;border:1px solid #d5e0f0;border-radius:10px;background:#f8fbff}
+.duplicate-merge summary{cursor:pointer;color:#24538d;font-weight:650}
+.duplicate-merge p{font-size:13px;color:#526782}
+.duplicate-merge>.row{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:12px 0}
+.duplicate-merge label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600}
+.duplicate-merge select{min-width:150px;max-width:100%}
+.merge-item{display:flex;align-items:center;gap:12px;padding:6px 0;font-size:13px}
+.merge-item button{padding:5px 9px}
+
+/* Confirmation is directly associated with the only Analyse action. */
+.review-confirmation{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:14px}
+.review-confirmation .check-confirm{margin:0!important;max-width:min(100%,690px);padding:7px 9px;border:1px solid transparent;border-radius:9px;cursor:pointer}
+.review-confirmation .check-confirm span{line-height:1.4}
+.review-confirmation #run{transition:background-color .15s,border-color .15s;min-height:42px}
+.review-confirmation #run.awaiting-confirmation{background:#e3e7ed;border-color:#d5dbe4;color:#5b6879;cursor:pointer}
+.review-confirmation #run.awaiting-confirmation:hover{filter:none;background:#d9dfe8}
+.review-confirmation .check-confirm.missing-confirmation{border-color:#d94242;background:#fff0f0;color:#a42020}
+.review-confirmation .check-confirm.missing-confirmation span{color:#a42020}
+.review-confirmation .check-confirm.missing-confirmation input{accent-color:#c82d2d;outline:2px solid #d94242;outline-offset:2px}
+.review-confirmation-error{color:#b42323;font-size:13px;font-weight:650;margin:6px 0 0 9px}
+.review-confirmation-error[hidden]{display:none}
+@media(max-width:650px){.review-confirmation{align-items:stretch;flex-direction:column}.review-confirmation #run{align-self:flex-start}}
+
+/* Results table: compact two-line headings with stable numeric columns. */
+.gp-breakdown-table{table-layout:fixed;min-width:1090px}
+.gp-breakdown-table thead th{white-space:normal;line-height:1.25;vertical-align:bottom;overflow-wrap:normal;word-break:normal;padding:11px 9px}
+.gp-breakdown-table th:nth-child(1){width:100px}
+.gp-breakdown-table th:nth-child(2){width:122px}
+.gp-breakdown-table th:nth-child(3){width:120px}
+.gp-breakdown-table th:nth-child(4){width:73px}
+.gp-breakdown-table th:nth-child(5){width:81px}
+.gp-breakdown-table th:nth-child(6){width:81px}
+.gp-breakdown-table th:nth-child(7){width:74px}
+.gp-breakdown-table th:nth-child(8){width:142px}
+.gp-breakdown-table th:nth-child(9){width:147px}
+.gp-breakdown-table th:nth-child(10){width:150px}
+.gp-breakdown-table tbody td{padding:10px 9px}
+.gp-breakdown-table tbody td:first-child{white-space:nowrap}
+.gp-breakdown-table tbody input[type=number]{width:100%;min-width:0}
+
+/* Site navigation shared with Project RALPH, compact enough for the analyser. */
+header.app-header{padding:0 22px}
+.app-header-inner{width:100%;max-width:1150px;margin:0 auto;min-height:62px;display:flex;justify-content:space-between;align-items:center;gap:18px}
+.app-nav{display:flex;align-items:center;flex-wrap:wrap;gap:16px}
+.app-nav a{text-decoration:none;color:#23466e;font-size:13px;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:7px;padding:6px 2px}
+.app-nav a:hover,.app-nav a:focus-visible{color:#215ea8;background:#ecf3fc}
+.app-nav .ralph-brand{gap:7px;font-size:18px;letter-spacing:.045em;font-weight:750;margin-right:4px;color:#173f70}
+.app-nav .ralph-brand svg{display:block;flex:none;width:23px;height:28px}
+.app-nav .home-link svg{display:block;flex:none}
+.app-header-end{display:flex;align-items:center;gap:16px}
+.app-header-end .app-name{font-size:16px;letter-spacing:-.45px;white-space:nowrap}
+.app-header-end .app-name span{color:#3466b1}
+.app-header-end small{white-space:nowrap}
+@media(max-width:780px){
+ .app-header-inner{min-height:56px;flex-wrap:wrap;gap:0 12px;padding:7px 0}
+ .app-nav{gap:12px}
+ .app-header-end small{display:none}
+}
+@media(max-width:510px){
+ header.app-header{padding:0 14px}
+ .app-header-inner{gap:6px}
+ .app-nav{width:100%;justify-content:space-between;gap:8px}
+ .app-header-end{margin-top:3px}
+ .app-header-end .app-name{font-size:14px}
+ .app-nav .ralph-brand{font-size:16px}
+}
+
+/* Vertical rhythm for the sequential EMIS workflow. */
+#importPanel{margin-top:0}
+#importPanel .import-intro{margin:0 0 24px;max-width:920px}
+#importPanel details summary{padding:2px 0;line-height:1.5}
+#importPanel details[open] summary{margin-bottom:17px}
+#importPanel details p{margin:12px 0}
+#importPanel details ol{margin:8px 0 12px}
+#importPanel details li+li{margin-top:9px}
+#importPanel #listBalanceImport{margin-top:26px}
+#importPanel #listBalanceImport label{display:grid;gap:9px;margin:18px 0;font-size:13px;font-weight:650;color:#425b75}
+#importPanel #listBalanceImport input[type=file]{font-weight:400;max-width:100%}
+#importPanel #listStatus:empty{display:none}
+#importPanel #message:empty{display:none}
+#clinicianPanel>.tablewrap{margin:22px 0}
+#clinicianPanel>.panelhead+p{margin-bottom:20px}
+#resultsPanel>.panelhead{margin:28px 0 24px}
+#resultsPanel>.panel{margin-top:30px}
+#resultsPanel>.panel>.tablewrap{margin-top:21px}
+#resultsPanel>.panel>p{margin-bottom:18px}
+.review-confirmation{margin-top:22px}
+.step-preview{padding-top:28px;padding-bottom:28px}
+.step-preview .step-hint{margin-top:12px}
+@media(max-width:700px){
+ main{padding:22px 14px 42px}
+ .panel{padding:23px 19px;margin-top:22px}
+ .privacy{padding:16px 17px;margin:20px 0 24px}
+ .panelhead{margin-bottom:18px}
+ .drop{padding:34px 15px}
+ #importPanel .import-intro{margin-bottom:20px}
+ #importPanel details{padding:17px}
+}
+
+/* Prevent misleading file affordances when the offline file is viewed over HTTP(S). */
+.drop.locked{opacity:.68;cursor:not-allowed;pointer-events:none}
+.import-action button:disabled{background:#a7b0bc;border-color:#a7b0bc;cursor:not-allowed}

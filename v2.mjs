@@ -1,0 +1,235 @@
+import {parseCsv,normaliseConsultations,clinicianCounts,analyse,proposalCsv,syntheticDemo,syntheticDemoListBalance,validWeeklySessions} from './engine.mjs';
+import {validateExportHeaders,validateSelectedMapping,filenameIsCsv,extractReportTable} from './import-security.mjs';
+// Build-time switch: the public build fails closed. Only the standalone offline build enables file processing.
+const PATIENT_IMPORTS_ENABLED = false;
+const $=id=>document.getElementById(id);
+let rows=null,events=[],quality=null,result=null,decisions={},statuses={},aliases={},isDemo=false,listSizes={},sessions={},validatedHeaders=null;
+if(!PATIENT_IMPORTS_ENABLED){
+ const localFileControls=document.querySelectorAll('input[type="file"]');
+ if(localFileControls.length){
+  for(const input of localFileControls){input.disabled=true;input.setAttribute('aria-disabled','true');}
+  for(const id of ['prepareCsv','process']){const button=$(id);if(button)button.disabled=true;}
+  const drop=$( 'drop' );if(drop){drop.classList.add('locked');drop.setAttribute('aria-disabled','true');}
+  const notice=$('message');
+  if(notice){notice.textContent='This web-hosted preview cannot open patient files. Download this HTML file and open it locally on an approved NHS device to enable EMIS imports.';notice.className='status error';}
+ }
+}
+
+const show=(id,on=true)=>{
+ if(!$(id))return;
+ $(id).hidden=!on;
+ if(['clinicianPanel','resultsPanel'].includes(id)){
+  $('clinicianOverview').hidden=!$('clinicianPanel').hidden || !$('resultsPanel').hidden;
+  $('resultsOverview').hidden=!$('resultsPanel').hidden;
+ }
+};
+const text=(tag,value)=>{const e=document.createElement(tag);e.textContent=String(value??'');return e;};
+const clear=id=>$(id).replaceChildren();
+const moveTo=id=>{const target=$(id);if(target)target.scrollIntoView({block:'start',behavior:'instant'});};
+const percent=v=>v==null?'Not available':(100*v).toFixed(1)+'%';
+const select=(items,value,change)=>{const s=document.createElement('select');for(const [v,label] of items){const o=text('option',label);o.value=v;s.append(o);}s.value=value;s.addEventListener('change',()=>change(s.value));return s;};
+function error(message){$('message').textContent=message;$('message').className='status error';}
+function tableRow(id,values){const tr=text('tr','');for(const v of values){const td=document.createElement('td');if(v instanceof Node)td.append(v);else td.textContent=String(v??'');tr.append(td);}$(id).append(tr);}
+async function load(file){
+ if(!PATIENT_IMPORTS_ENABLED){error('Patient file imports are unavailable on the public website. Download the offline edition instead.');return;}
+ try{
+  if(file.size>60_000_000)throw Error('File exceeds 60 MB.');
+  if(!filenameIsCsv(file.name))throw Error('Please choose a CSV export, not an Excel file.');
+  const bytes=await file.arrayBuffer();
+  let csvText;
+  try{csvText=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
+  catch{csvText=new TextDecoder('windows-1252',{fatal:true}).decode(bytes);}
+  const extracted=extractReportTable(parseCsv(csvText,{allowPreamble:true}),'consultations');rows=extracted.rows;validatedHeaders=validateExportHeaders(rows[0],'consultations');isDemo=false;show('mapPanel');
+  const cols={...validatedHeaders};clear('mappings');
+  for(const [key,title] of [['patient','Patient identifier'],['date','Consultation date'],['clinician','Consulting clinician'],['usual','Usual GP'],['type','Consultation / slot type (optional)'],['status','Attendance status (optional)']]){
+   const label=text('label',title);
+   const options=[['-1','Not provided'],...rows[0].map((h,i)=>[String(i),h||'Column '+(i+1)])];
+   const s=select(options,String(cols[key]??-1),()=>{});s.id='map-'+key;
+   label.append(s);$('mappings').append(label);
+  }
+  $('message').textContent='CSV read locally. '+(rows.length-1).toLocaleString('en-GB')+' rows detected. '+(extracted.skippedMetadataRows?'Skipped '+extracted.skippedMetadataRows+' preceding report-information row(s). ':'')+'Confirm column mappings.';$('message').className='status';moveTo('mapPanel');
+ }catch(e){rows=null;validatedHeaders=null;show('mapPanel',false);error(e.message);}
+}
+function runParsing(){
+ if(!PATIENT_IMPORTS_ENABLED){error('The online edition cannot analyse patient files. Use the offline edition.');return;}
+ try{
+  const map=Object.fromEntries(['patient','date','clinician','usual','type','status'].map(k=>[k,Number($('map-'+k).value)]));
+  if(!$('importConfirmed').checked)throw Error('Confirm this is an attended-GP-appointments export from an approved EMIS search.');
+  validateSelectedMapping(validatedHeaders,map);
+  const parsed=normaliseConsultations(rows,map,{referenceDate:$('referenceDate').value});
+  events=parsed.events;quality=parsed.quality;isDemo=false;$('reviewConfirmed').checked=false;updateReviewConfirmation();renderClinicians();show('clinicianPanel');show('importPanel',false);show('resultsPanel',false);moveTo('clinicianPanel');
+ }catch(e){error(e.message);}
+}
+function renderClinicians(){
+ clear('clinicians');const clinicians=clinicianCounts(events);
+ for(const c of clinicians){
+  if(statuses[c.name]==null)statuses[c.name]=/^(system|unknown|automated|booking|reception|administrator|admin|emis)/i.test(c.name)?'exclude':c.usualRows>0?'eligible':'nonlist';
+  const status=select([['eligible','GP with a list'],['nonlist','Sees patients, no list'],['exclude','Ignore'],['departed','Left the practice']],statuses[c.name],v=>{statuses[c.name]=v;});
+  status.setAttribute('aria-label','Status of '+c.name);
+  tableRow('clinicians',[c.name,c.consultations.toLocaleString('en-GB'),status]);
+ }
+ renderMerges(clinicians.map(c=>c.name));
+}
+function renderMerges(names){
+ const from=$('mergeFrom'),into=$('mergeInto'),list=$('activeMerges');
+ const previousFrom=from.value,previousInto=into.value;
+ from.replaceChildren();into.replaceChildren();list.replaceChildren();
+ for(const name of names){
+  const a=text('option',name);a.value=name;from.append(a);
+  const b=text('option',name);b.value=name;into.append(b);
+ }
+ if(names.includes(previousFrom))from.value=previousFrom;
+ if(names.includes(previousInto))into.value=previousInto;
+ else if(names.length>1)into.selectedIndex=1;
+ for(const [source,target] of Object.entries(aliases)){
+  if(!target||!names.includes(source)||!names.includes(target))continue;
+  const item=document.createElement('div');item.className='merge-item';
+  const label=text('span',source+' → '+target);
+  const undo=document.createElement('button');undo.type='button';undo.className='outline';undo.textContent='Undo';
+  undo.setAttribute('aria-label','Undo merge of '+source+' into '+target);
+  undo.addEventListener('click',()=>{delete aliases[source];renderMerges(names);});
+  item.append(label,undo);list.append(item);
+ }
+ if(!list.children.length)list.append(text('p','No names merged.'));
+}
+function addClinicianMerge(){
+ const from=$('mergeFrom').value,into=$('mergeInto').value;
+ if(!from||!into||from===into){window.alert('Choose two different names for the same doctor.');return;}
+ if(aliases[into]){window.alert('Choose a primary name that is not already merged into another name.');return;}
+ // Keep mappings flat: if another name was previously merged into this source, move it to the new primary name.
+ for(const [name,target] of Object.entries(aliases))if(target===from)aliases[name]=into;
+ aliases[from]=into;
+ renderMerges(clinicianCounts(events).map(c=>c.name));
+}
+function updateReviewConfirmation(){
+ const confirmed=$('reviewConfirmed').checked;
+ const button=$('run');
+ button.classList.toggle('awaiting-confirmation',!confirmed);
+ button.setAttribute('aria-disabled',String(!confirmed));
+ if(confirmed){
+  $('reviewConfirmationLabel').classList.remove('missing-confirmation');
+  $('reviewConfirmationError').hidden=true;
+  $('reviewConfirmed').removeAttribute('aria-invalid');
+ }
+}
+function flagMissingReview(){
+ $('reviewConfirmationLabel').classList.add('missing-confirmation');
+ $('reviewConfirmationError').hidden=false;
+ $('reviewConfirmed').setAttribute('aria-invalid','true');
+ $('reviewConfirmationLabel').scrollIntoView({block:'center',behavior:'smooth'});
+ $('reviewConfirmed').focus({preventScroll:true});
+}
+function calculate(){
+ if(!PATIENT_IMPORTS_ENABLED&&!isDemo){window.alert('Only fictional data can be analysed on the public website.');return;}
+ try{
+  if(!$('reviewConfirmed').checked){flagMissingReview();return;}
+  const minVisits=Number($('minVisits').value),high=Number($('high').value)/100,medium=Number($('medium').value)/100;
+  if(!Number.isInteger(minVisits)||minVisits<1||minVisits>30||high<medium||high>1||medium<0.3)throw Error('Check the thresholds.');
+  result=analyse(events,{statuses,aliases,minVisits,high,medium,listSizes,sessions});
+  decisions={};show('clinicianPanel',false);show('resultsPanel');renderResults();moveTo('resultsPanel');
+ }catch(e){window.alert(e.message);}
+}
+function renderResults(){
+ const m=result.metrics;
+ $('listBalanceNote').textContent=isDemo
+  ? 'Fictional example: full GP list sizes and weekly clinical sessions are illustrative. The 240 consultation patients represent only a sample of each list.'
+  : Object.keys(listSizes).length
+   ? 'Registered list sizes are from the separate Step 1B EMIS export. Clinical sessions/week must be entered manually in this table.'
+   : 'Full GP list sizes are not in the consultation export. To fill these columns, import the optional Step 1B registered-patient CSV. Enter weekly clinical sessions manually.';
+ $('mPatients').textContent=m.frequent.toLocaleString('en-GB');$('mAccuracy').textContent=percent(m.usualAccuracy);$('mUpc').textContent=percent(m.meanUPC);$('mSlicc').textContent=percent(m.slicc);
+ const names=result.gpRows.filter(g=>statuses[g.gp]!=='exclude').map(g=>g.gp);
+ const selected=$('selectedGp').value;clear('selectedGp');
+ for(const n of names){const o=text('option',n);o.value=n;$('selectedGp').append(o);}
+ if(names.includes(selected))$('selectedGp').value=selected;
+ renderPartnerRows();clear('swaps');clear('gpRows');clear('proposals');
+ $('swapCount').textContent=result.pairs.length+' proposed reciprocal pairs. Export contains only approved rows, after manual review.';
+ result.pairs.forEach((pair,index)=>{
+  for(const p of [pair.a,pair.b]){
+   const decision=select([['For review','For review'],['Approved','Suitable in principle'],['Rejected','Do not swap']],decisions[p.id]||'For review',v=>{decisions[p.id]=v;});
+   decision.setAttribute('aria-label','Review patient '+p.id);
+   tableRow('swaps',[index+1,p.id,p.from,p.to,p.top+' / '+p.n,decision]);
+  }
+ });
+ for(const g of result.gpRows){
+  const session=document.createElement('input');session.type='number';session.min='0.5';session.step='0.5';session.max='99.5';session.placeholder='-';session.value=sessions[g.gp]??'';session.title='Enter a number of sessions in increments of 0.5 (minimum 0.5).';
+  session.setAttribute('aria-label','Weekly clinical sessions for '+g.gp);
+  const per=text('span',g.perSession==null?'-':g.perSession.toFixed(1));
+  session.addEventListener('input',()=>{session.setCustomValidity('');});
+  session.addEventListener('change',()=>{
+   if(session.value.trim()===''){delete sessions[g.gp];per.textContent='-';return;}
+   const n=Number(session.value);
+   if(!validWeeklySessions(n)){
+    session.setCustomValidity('Use whole or half sessions only (0.5, 1, 1.5, 2, etc).');
+    session.reportValidity();
+    return;
+   }
+   session.setCustomValidity('');
+   sessions[g.gp]=n;
+   per.textContent=listSizes[g.gp]!=null?(listSizes[g.gp]/n).toFixed(1):'-';
+  });
+  tableRow('gpRows',[g.gp,g.patients,g.frequent,g.aligned,g.outgoing,g.incoming,percent(g.slicc),g.registered??'-',session,per]);
+ }
+ for(const p of result.proposals.slice(0,1500))tableRow('proposals',[p.id,p.from,p.to,p.n,percent(p.topShare),p.confidence]);
+ const q=quality||{};clear('quality');
+ const summary=text('p','Analysed '+m.consultations+' consultations across '+m.patients+' patient identifiers. '+result.excluded+' rows excluded by clinician settings. '+(q.duplicates||0)+' identical-looking appointment rows retained for review; '+(q.missingUsual||0)+' records lacked a usual GP; '+(q.excludedStatus||0)+' non-attended appointments filtered; '+(q.skippedDate||0)+' invalid dates excluded.');$('quality').append(summary);
+}
+function renderPartnerRows(){
+ clear('partners');const mine=$('selectedGp').value;const count=new Map();
+ for(const p of result.proposals){
+  if(p.from!==mine&&p.to!==mine)continue;
+  const other=p.from===mine?p.to:p.from;
+  if(!count.has(other))count.set(other,{from:0,to:0});
+  const item=count.get(other);if(p.from===mine)item.from++;else item.to++;
+ }
+ const ranked=[...count.entries()].sort((a,b)=>Math.min(b[1].from,b[1].to)-Math.min(a[1].from,a[1].to)||b[1].from+b[1].to-a[1].from-a[1].to);
+ for(const [gp,c] of ranked)tableRow('partners',[gp,c.from,c.to,Math.min(c.from,c.to)]);
+ if(!ranked.length)tableRow('partners',['No matching GP partners','-','-','-']);
+}
+function reset(){rows=null;events=[];quality=null;result=null;decisions={};statuses={};aliases={};isDemo=false;listSizes={};sessions={};validatedHeaders=null;if($('importConfirmed'))$('importConfirmed').checked=false;$('reviewConfirmed').checked=false;updateReviewConfirmation();if($('file'))$('file').value='';if($('listFile'))$('listFile').value='';if($('listStatus'))$('listStatus').textContent='';show('mapPanel',false);show('resultsPanel',false);show('clinicianPanel',false);show('importPanel');$('message').textContent='';}
+if($('referenceDate'))$('referenceDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+$('listFile')?.addEventListener('change',async e=>{
+ if(!PATIENT_IMPORTS_ENABLED){e.target.value='';return;}
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>60_000_000||!/\\.csv$/i.test(file.name))throw Error('Choose a CSV under 60 MB.');
+  const extracted=extractReportTable(parseCsv(await file.text(),{allowPreamble:true}),'list'),data=extracted.rows,columns=validateExportHeaders(data[0],'list');
+  if(columns.patient<0||columns.usual<0)throw Error('List file must contain patient identifier and usual GP columns.');
+  const seen=new Map();
+  for(const row of data.slice(1)){
+   const id=String(row[columns.patient]||'').trim(),gp=String(row[columns.usual]||'').trim();
+   if(!id||!gp)continue;
+   if(seen.has(id)&&seen.get(id)!==gp)throw Error('Conflicting usual GP values for the same patient identifier.');
+   seen.set(id,gp);
+  }
+  if(seen.size===0)throw Error('No registered patient rows were found.');
+  listSizes={};for(const gp of seen.values())listSizes[gp]=(listSizes[gp]||0)+1;
+  $('listStatus').textContent='Loaded '+seen.size+' unique registered patients across '+Object.keys(listSizes).length+' lists. Data stays in memory.';
+  if(result){result=analyse(events,{statuses,aliases,listSizes,sessions,minVisits:Number($('minVisits').value),high:Number($('high').value)/100,medium:Number($('medium').value)/100});renderResults();}
+ }catch(err){$('listStatus').textContent='List import not accepted: '+err.message;}
+});
+$('file')?.addEventListener('change',e=>{
+ if(!PATIENT_IMPORTS_ENABLED){e.target.value='';return;}show('mapPanel',false);rows=null;validatedHeaders=null;const f=e.target.files?.[0];$('message').textContent=f?'Selected '+f.name+'. Click Process selected CSV.':'';});
+$('prepareCsv')?.addEventListener('click',()=>{
+ if(!PATIENT_IMPORTS_ENABLED){error('Patient data must be analysed in the offline edition.');return;}const f=$('file').files?.[0];if(!f){error('Choose a consultation CSV first.');return;}load(f);});
+const drop=$('drop');
+drop?.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop?.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop?.addEventListener('drop',e=>{
+ if(!PATIENT_IMPORTS_ENABLED){e.preventDefault();return;}e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files?.[0])load(e.dataTransfer.files[0]);});
+$('process')?.addEventListener('click',runParsing);
+$('demo').addEventListener('click',()=>{reset();events=syntheticDemo();({listSizes,sessions}=syntheticDemoListBalance());quality={totalRows:events.length};isDemo=true;$('reviewConfirmed').checked=false;updateReviewConfirmation();renderClinicians();show('importPanel',false);show('clinicianPanel');moveTo('clinicianPanel');});
+$('addMerge').addEventListener('click',addClinicianMerge);
+$('run').addEventListener('click',calculate);
+$('reviewConfirmed').addEventListener('change',updateReviewConfirmation);
+updateReviewConfirmation();
+$('backImport').addEventListener('click',()=>{show('clinicianPanel',false);show('importPanel');});
+$('editClinicians').addEventListener('click',()=>{show('resultsPanel',false);show('clinicianPanel');});
+$('reset').addEventListener('click',reset);
+$('selectedGp').addEventListener('change',renderPartnerRows);
+$('download').addEventListener('click',()=>{
+ const reviewed=result.pairs.filter(p=>decisions[p.a.id]==='Approved'&&decisions[p.b.id]==='Approved').flatMap(p=>[p.a,p.b]);
+ if(!reviewed.length){window.alert('Approve both patients in at least one reciprocal pair before exporting.');return;}
+ if(!window.confirm('This download contains confidential patient identifiers. Save it only to an approved NHS location. Continue?'))return;
+ const csv=proposalCsv(reviewed,decisions);
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='continuitybuddy-reviewed-proposals.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),0);
+});

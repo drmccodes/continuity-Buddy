@@ -1,0 +1,204 @@
+// Pure, dependency-free, browser-safe ContinuityBuddy analysis engine.
+// No network, storage, DOM or logging. All identifiers are confidential.
+export function parseCsv(source,{allowPreamble=false}={}) {
+ if(typeof source!=='string'||!source.trim())throw Error('The file is empty.');
+ if(source.length>60_000_000)throw Error('CSV exceeds the 60 MB safety limit.');
+ source=source.replace(/^\uFEFF/,'');
+ // Detect delimiters outside quoted fields, including EMIS tab-separated exports.
+ const candidates=[',',';','\t'], scores=new Map(candidates.map(x=>[x,0]));
+ // Only infer a delimiter from a prospective table header, not the report title.
+ // Count separators across the first 40 physical lines, ignoring quoted strings.
+ let candidateLines=0, quotedHeader=false,lineCounts={',':0,';':0,'\t':0};
+ for(let i=0;i<source.length&&candidateLines<40;i++){
+  const c=source[i];
+  if(c==='"'){if(quotedHeader&&source[i+1]==='"')i++;else quotedHeader=!quotedHeader;}
+  else if(!quotedHeader&&(c==='\r'||c==='\n')){
+    for(const sep of candidates)if(lineCounts[sep]>=1)scores.set(sep,scores.get(sep)+lineCounts[sep]);
+    lineCounts={',':0,';':0,'\t':0};candidateLines++;if(c==='\r'&&source[i+1]==='\n')i++;
+  }else if(!quotedHeader&&c in lineCounts)lineCounts[c]++;
+ }
+ for(const sep of candidates)if(lineCounts[sep]>=1)scores.set(sep,scores.get(sep)+lineCounts[sep]);
+ const sep=candidates.sort((a,b)=>scores.get(b)-scores.get(a))[0];
+ const out=[];let row=[],field='',quoted=false,after=false,line=1,start=1;
+ function finish(){row.push(field);if(row.some(v=>v.trim()))out.push({row,line:start});row=[];field='';after=false;start=line+1;if(out.length>500000)throw Error('Too many rows: maximum 500,000.');}
+ for(let i=0;i<source.length;i++){const c=source[i];
+  if(quoted){if(c==='"'&&source[i+1]==='"'){field+='"';i++;}else if(c==='"'){quoted=false;after=true;}else{field+=c;if(c==='\n')line++;}}
+  else if(after){if(c===sep){row.push(field);field='';after=false;}else if(c==='\r'||c==='\n'){finish();if(c==='\r'&&source[i+1]==='\n')i++;line++;}else if(c!==' '&&c!=='\t')throw Error('Invalid CSV quoting near line '+line+'.');}
+  else if(c==='"'){if(field.trim())throw Error('Invalid CSV quoting near line '+line+'.');field='';quoted=true;}
+  else if(c===sep){row.push(field);field='';}
+  else if(c==='\r'||c==='\n'){finish();if(c==='\r'&&source[i+1]==='\n')i++;line++;}
+  else field+=c;
+ }
+ if(quoted)throw Error('Unclosed CSV quote beginning near line '+start+'.');
+ row.push(field);if(row.some(v=>v.trim()))out.push({row,line:start});
+ if(!out.length)throw Error('The file contains no rows.');
+ const width=out[0].row.length;if(width>150)throw Error('CSV contains more than 150 columns.');
+ const bad=allowPreamble?null:out.find(x=>x.row.length!==width);
+ if(bad)throw Error('CSV row '+bad.line+' has '+bad.row.length+' columns; the header has '+width+'. Check the export delimiter, quoted fields and unexpected separators. Nothing has been analysed.');
+ if(allowPreamble&&out.some(x=>x.row.length>150))throw Error('CSV contains more than 150 columns.');
+ return out.map(x=>x.row);
+}const norm=s=>String(s??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ');
+export function guessColumns(headers){
+ const rules={
+  patient:[/^(emis )?(patient )?(number|id)$/, /nhs number/,/patient identifier/,/patient id/,/patient number/],
+  date:[/consultation.*date/,/appointment.*date/,/appt.*date/,/^date$/, /event date/],
+  clinician:[/consultation.*(user|clinician|doctor|gp)/,/appointment.*(clinician|user|doctor|gp)/,/consulting (clinician|gp|doctor)/,/seen by/,/staff member.*full name/,/clinician/],
+  usual:[/usual gp/,/registered gp/,/named gp/,/allocated gp/,/usual doctor/],
+  type:[/consultation type/,/appointment type/,/slot type/,/event type/],
+  status:[/appointment status/,/attendance status/]
+ };
+ const used=new Set();const result={};for(const [name,patterns] of Object.entries(rules)){
+  const options=headers.map((h,i)=>({i,h:norm(h)})).filter(x=>!used.has(x.i));
+  const match=patterns.map(p=>options.find(x=>p.test(x.h))).find(Boolean);
+  result[name]=match?.i??-1;if(match)used.add(match.i);
+ }return result;
+}
+export function parseDate(value){
+ const s=String(value??'').trim();if(!s)return null;
+ if(/^\d{4}-\d{2}-\d{2}/.test(s)){const d=new Date(s.slice(0,10)+'T12:00:00Z');return Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==s.slice(0,10)?null:s.slice(0,10);}
+ const textDate=s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})(?:\s|$)/);
+ if(textDate){
+  const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const month=months.indexOf(textDate[2].toLowerCase());
+  if(month<0)return null;
+  return parseDate(textDate[3]+'-'+String(month+1).padStart(2,'0')+'-'+textDate[1].padStart(2,'0'));
+ }
+ const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const iso=m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return parseDate(iso);}
+ if(/^\d{5}(\.\d+)?$/.test(s)){const d=new Date((Number(s)-25569)*86400000);return Number.isNaN(d.getTime())?null:d.toISOString().slice(0,10);}
+ return null;
+}
+function cell(r,index){return index>=0?String(r[index]??'').trim():'';}
+export function normaliseConsultations(rows,map,{referenceDate='2026-11-06',months=12}={}){
+ if(!Array.isArray(rows)||rows.length<2)throw Error('A header and consultation rows are required.');
+ for(const k of ['patient','date','clinician','usual']) if(!Number.isInteger(map[k])||map[k]<0||map[k]>=rows[0].length)throw Error('Please select all four required columns.');
+ if(new Set(['patient','date','clinician','usual'].map(k=>map[k])).size<4)throw Error('Required columns must be different.');
+ const ref=parseDate(referenceDate);if(!ref)throw Error('Invalid analysis date.');
+ const cutoff=new Date(ref+'T12:00:00Z');cutoff.setUTCMonth(cutoff.getUTCMonth()-months);
+ const min=cutoff.toISOString().slice(0,10);
+ let skippedDate=0,skippedOld=0,skippedFuture=0,missingId=0,missingClinician=0,missingUsual=0,excludedStatus=0,duplicates=0;
+ const events=[],unique=new Set();
+ for(const r of rows.slice(1)){
+  const id=cell(r,map.patient),usual=cell(r,map.usual),clinician=cell(r,map.clinician),date=parseDate(cell(r,map.date));
+  if(!id){missingId++;continue;}if(!date){skippedDate++;continue;}if(date<min){skippedOld++;continue;}if(date>ref){skippedFuture++;continue;}
+  if(!clinician){missingClinician++;continue;}if(!usual)missingUsual++;
+  const status=cell(r,map.status);
+  if(/^(cancelled|canceled|did not attend|dna|not attended|booked|pending)$/i.test(status)){excludedStatus++;continue;}
+  const type=cell(r,map.type);
+  const key=JSON.stringify([id,clinician,date,type,status]);
+  if(unique.has(key))duplicates++;else unique.add(key);
+  events.push({id,usual,clinician,date,type,status});
+ }
+ if(missingId)throw Error(missingId+' rows have no patient identifier. Re-export from EMIS with BOTH replicate patient and usual GP options enabled.');
+ if(!events.length)throw Error('No usable consultations within the selected period.');
+ return {events,quality:{skippedDate,skippedOld,skippedFuture,missingId,missingClinician,missingUsual,excludedStatus,duplicates,totalRows:rows.length-1},window:{start:min,end:ref}};
+}
+export function clinicianCounts(events){
+ const counts=new Map();for(const e of events){for(const k of [e.clinician,e.usual])if(k&&!counts.has(k))counts.set(k,{name:k,consultations:0,usualRows:0});if(e.clinician)counts.get(e.clinician).consultations++;if(e.usual)counts.get(e.usual).usualRows++;}
+ return [...counts.values()].sort((a,b)=>b.consultations-a.consultations||a.name.localeCompare(b.name));
+}
+export function analyse(events,opts={}){
+ const minVisits=Math.max(1,Number(opts.minVisits)||4),high=Math.min(1,Math.max(0,Number(opts.high??0.65))),medium=Math.min(high,Math.max(0,Number(opts.medium??0.5)));
+ const statuses=opts.statuses||{},aliases=opts.aliases||{},sessions=opts.sessions||{},listSizes=opts.listSizes||{};
+ const statusOf=n=>statuses[n]||'eligible';const canonical=n=>aliases[n]||n;
+ const groups=new Map();let excluded=0;
+ for(const e of events){
+  const doc=canonical(e.clinician),usual=canonical(e.usual);
+  if(statusOf(e.clinician)==='exclude'||statusOf(doc)==='exclude'){excluded++;continue;}
+  if(!groups.has(e.id))groups.set(e.id,{id:e.id,visits:[],usualValues:new Map()});
+  const g=groups.get(e.id);g.visits.push({...e,clinician:doc,usual});
+  if(usual)g.usualValues.set(usual,(g.usualValues.get(usual)||0)+1);
+ }
+ const patients=[],byGp=new Map(),proposals=[],fragmented=[];
+ let totalVisits=0,ownVisits=0,upcSum=0,clearAligned=0,clearMismatch=0;
+ for(const g of groups.values()){
+  const visits=g.visits.sort((a,b)=>a.date.localeCompare(b.date));
+  const counts=new Map();for(const v of visits)counts.set(v.clinician,(counts.get(v.clinician)||0)+1);
+  const n=visits.length;if(!n)continue;
+  const ranked=[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const top=ranked[0][1],tops=ranked.filter(v=>v[1]===top).map(v=>v[0]);
+  const usual=[...g.usualValues.entries()].sort((a,b)=>b[1]-a[1]||b[0].localeCompare(a[0]))[0]?.[0]||'';
+  const matched=counts.get(usual)||0;
+  totalVisits+=n;ownVisits+=matched;
+  if(usual&&!byGp.has(usual))byGp.set(usual,{gp:usual,patients:0,frequent:0,visits:0,ownVisits:0,aligned:0,outgoing:0,incoming:0});
+  if(usual){const s=byGp.get(usual);s.patients++;s.visits+=n;s.ownVisits+=matched;}
+  if(n<minVisits)continue;
+  upcSum+=top/n;
+  const topEligible=tops.filter(t=>statusOf(t)==='eligible');
+  const ownIsTop=tops.includes(usual);
+  const departed=statusOf(usual)==='departed';
+  const clear=top/n>=medium&&tops.length===1&&topEligible.length===1;
+  let category='fragmented',to='',confidence='';
+  if(!usual){category='missing-usual';}
+  else if(g.usualValues.size>1){category='conflicting-usual';}
+  else if(ownIsTop&&tops.length===1&&!departed){category='aligned';clearAligned++;}
+  else if(clear){to=topEligible[0];category=departed?'departed':'reallocate';confidence=top/n>=high?'high':'medium';clearMismatch++;}
+  else if(departed){category='departed-review';}
+  const p={id:g.id,from:usual,to,n,top,topShare:top/n,ownCount:matched,counts:Object.fromEntries(ranked),category,confidence,dayCount:new Set(visits.map(v=>v.date)).size};
+  patients.push(p);
+  if(usual){byGp.get(usual).frequent++;if(category==='aligned')byGp.get(usual).aligned++;if(to&&to!==usual)byGp.get(usual).outgoing++;}
+  if(to&&to!==usual){proposals.push(p);if(!byGp.has(to))byGp.set(to,{gp:to,patients:0,frequent:0,visits:0,ownVisits:0,aligned:0,outgoing:0,incoming:0});byGp.get(to).incoming++;}
+  else if(category!=='aligned')fragmented.push(p);
+ }
+ proposals.sort((a,b)=>(b.topShare-a.topShare)||(b.n-a.n)||(a.id.localeCompare(b.id)));
+ const pairMap=new Map();
+ for(const p of proposals){const key=[p.from,p.to].sort().join('\u0000');if(!pairMap.has(key))pairMap.set(key,{key,gps:[p.from,p.to].sort(),forward:[],backward:[]});const pair=pairMap.get(key);(p.from===pair.gps[0]?pair.forward:pair.backward).push(p);}
+ const pairs=[];for(const group of pairMap.values())if(group.forward.length&&group.backward.length){
+  const count=Math.min(group.forward.length,group.backward.length);
+  for(let i=0;i<count;i++)pairs.push({a:group.forward[i],b:group.backward[i],gps:group.gps});
+ }
+ const gpRows=[...byGp.values()].map(g=>({...g,slicc:g.visits?g.ownVisits/g.visits:null,registered:listSizes[g.gp]??null,sessions:sessions[g.gp]??null,perSession:(listSizes[g.gp]!=null&&sessions[g.gp]>0)?listSizes[g.gp]/sessions[g.gp]:null})).sort((a,b)=>a.gp.localeCompare(b.gp));
+ const eligible=patients.length;
+ return {patients,proposals,fragmented,pairs,gpRows,excluded,metrics:{patients:groups.size,frequent:eligible,consultations:totalVisits,meanUPC:eligible?upcSum/eligible:null,usualAccuracy:clearAligned+clearMismatch?clearAligned/(clearAligned+clearMismatch):null,slicc:totalVisits?ownVisits/totalVisits:null,clearAligned,clearMismatch}};
+}
+export function safeCsv(value){const s=String(value??'');const protectedValue=/^[\s\x00-\x1f]*[=+@\-\t\r]/.test(s)?"'"+s:s;return '"'+protectedValue.replace(/"/g,'""')+'"';}
+export function proposalCsv(proposals,decisions={}){
+ const rows=[['Patient ID','Current usual GP','Proposed usual GP','Consultations','Seen proposed GP','Seen usual GP','Share','Confidence','Review decision']];
+ for(const p of proposals)rows.push([p.id,p.from,p.to,p.n,p.top,p.ownCount,(100*p.topShare).toFixed(1)+'%',p.confidence,decisions[p.id]||'For review']);
+ return rows.map(r=>r.map(safeCsv).join(',')).join('\r\n');
+}
+export function validWeeklySessions(value){
+ return Number.isFinite(value) && value>=0.5 && value<=99.5 && Number.isInteger(value*2);
+}
+
+export function syntheticDemoListBalance(){
+ // Illustrative whole-practice counts: distinct from the 240 demo patients seen in consultation history.
+ return {
+  listSizes:{'Dr Ash':1200,'Dr Birch':1450,'Dr Cedar':1100,'Dr Dale':1350},
+  sessions:{'Dr Ash':6,'Dr Birch':6,'Dr Cedar':5,'Dr Dale':6.5}
+ };
+}
+export function syntheticDemo(){
+ // Deterministic, fictional cohort: 240 patients, four list-holding GPs,
+ // with aligned consultations, reciprocal swap candidates and mixed attendance.
+ const events=[];
+ const doctors=['Dr Ash','Dr Birch','Dr Cedar','Dr Dale'];
+ const put=(id,usual,doc,n,offset=0)=>{
+  for(let i=0;i<n;i++)events.push({
+   id,usual,clinician:doc,
+   date:'2026-'+String(1+(i+offset)%10).padStart(2,'0')+'-'+String(1+(i*3+offset)%27).padStart(2,'0'),
+   type:'GP',status:'Attended'
+  });
+ };
+ for(let j=0;j<240;j++){
+  const id='DEMO-'+String(j+1).padStart(3,'0');
+  const ownerIndex=Math.floor(j/60),usual=doctors[ownerIndex],next=doctors[(ownerIndex+1)%4];
+  const prior=doctors[(ownerIndex+3)%4],pattern=j%6;
+  if(pattern===0||pattern===1){
+   put(id,usual,usual,5+(j%3),j);
+   put(id,usual,next,1,j+2);
+  }else if(pattern===2||pattern===3){
+   // Include both directions, so neighbouring GP lists have reciprocal candidates.
+   const target=pattern===2?next:prior;
+   put(id,usual,target,6+(j%3),j);
+   put(id,usual,usual,1+(j%2),j+3);
+  }else if(pattern===4){
+   put(id,usual,usual,4,j);
+   put(id,usual,prior,3,j+4);
+  }else{
+   put(id,usual,next,4,j);
+   put(id,usual,prior,3,j+2);
+   put(id,usual,usual,1,j+5);
+  }
+ }
+ return events;
+}
