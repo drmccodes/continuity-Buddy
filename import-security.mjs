@@ -80,7 +80,6 @@ export function extractReportTable(rows,mode='consultations'){
  let continuedPatientRows=0;
  if(mode==='consultations'){
   let lastPatient='',lastUsual='';
-  const seenPatients=new Set();
   for(let i=1;i<tableRows.length;i++){
    const row=tableRows[i],patient=String(row[columns.patient]??'').trim(),usual=String(row[columns.usual]??'').trim();
    if(!patient&&!usual){
@@ -90,8 +89,9 @@ export function extractReportTable(rows,mode='consultations'){
     row[columns.usual]=lastUsual;
     continuedPatientRows++;
    }else if(patient&&usual){
-    if(seenPatients.has(patient))throw Error('Patient groups are not contiguous in this EMIS export (row '+(header+i+1)+'). Cannot safely reconstruct blank identifiers.');
-    seenPatients.add(patient);lastPatient=patient;lastUsual=usual;
+    // Each explicit patient and usual GP is an authoritative new anchor.
+    // The same patient may legitimately appear in more than one report section.
+    lastPatient=patient;lastUsual=usual;
    }else{
     throw Error('EMIS row '+(header+i+1)+' has only one of patient identifier and usual GP. Cannot safely reconstruct patient details.');
    }
