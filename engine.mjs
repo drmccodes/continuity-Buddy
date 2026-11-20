@@ -56,6 +56,13 @@ export function guessColumns(headers){
 export function parseDate(value){
  const s=String(value??'').trim();if(!s)return null;
  if(/^\d{4}-\d{2}-\d{2}/.test(s)){const d=new Date(s.slice(0,10)+'T12:00:00Z');return Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==s.slice(0,10)?null:s.slice(0,10);}
+ const textDate=s.match(/^(\\d{1,2})-([A-Za-z]{3})-(\\d{4})(?:\\s|$)/);
+ if(textDate){
+  const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const month=months.indexOf(textDate[2].toLowerCase());
+  if(month<0)return null;
+  return parseDate(textDate[3]+'-'+String(month+1).padStart(2,'0')+'-'+textDate[1].padStart(2,'0'));
+ }
  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const iso=m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return parseDate(iso);}
  if(/^\d{5}(\.\d+)?$/.test(s)){const d=new Date((Number(s)-25569)*86400000);return Number.isNaN(d.getTime())?null:d.toISOString().slice(0,10);}
  return null;
